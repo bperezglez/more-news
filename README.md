@@ -17,7 +17,7 @@ Medios de contraste (no se listan; se usan para encontrar la misma noticia en ab
 
 ## Requisitos
 
-- Node.js 20+
+- Node.js 22+
 - npm
 
 ## Desarrollo local
