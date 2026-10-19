@@ -139,3 +139,23 @@ En GitHub Pages la PWA está activa (`manifest.webmanifest` + `sw.js`). El servi
 | PWA no ofrece instalar | Usar Chrome/Safari; abrir la URL de Pages, no solo localhost. |
 
 Si quieres dominio propio (`noticias.tudominio.com`), en **Settings → Pages** puedes configurar un **custom domain** y actualizar DNS según la documentación de GitHub.
+
+---
+
+## 6. MCP de GitHub (Cloud Agent / Cursor)
+
+Si pides al agente que suba código con el MCP y ves **`403 Resource not accessible by personal access token`**:
+
+1. **Reconectar en este chat de Cloud Agent** (no basta solo con Cursor Desktop): cuando el agente invoque autenticación MCP, completa el flujo en el navegador.
+2. En GitHub, si usas **fine-grained token**, edita el token y asegúrate de:
+   - **Repository access**: incluir **`more-news`** (si el repo se creó después del token, hay que añadirlo).
+   - **Repository permissions → Contents**: **Read and write**.
+   - **Metadata**: al menos Read.
+3. Vuelve a pedir al agente que haga el push por MCP.
+
+Mientras el 403 persista, usa **SSH** desde tu máquina:
+
+```bash
+git remote set-url github git@github.com:bperezglez/more-news.git
+git push -u github main
+```
