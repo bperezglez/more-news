@@ -5,21 +5,15 @@ import { HeadlineCard } from "./headline-card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { Headline } from "@/lib/newspapers/types";
+import {
+  loadHeadlinesClient,
+  type HeadlinesPayload,
+} from "@/lib/newspapers/load-headlines-client";
+import { isStaticHosting } from "@/lib/site-config";
 import { newspaperSources } from "@/lib/newspapers/sources";
 
-type ApiResponse = {
-  headlines: Headline[];
-  bySource: {
-    source: { id: string; name: string };
-    headlines: Headline[];
-    error?: string;
-  }[];
-  error?: string;
-};
-
 export function HeadlinesDashboard() {
-  const [data, setData] = useState<ApiResponse | null>(null);
+  const [data, setData] = useState<HeadlinesPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,11 +21,7 @@ export function HeadlinesDashboard() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/headlines", { cache: "no-store" });
-      const json = (await res.json()) as ApiResponse;
-      if (!res.ok) {
-        throw new Error(json.error ?? "No se pudieron cargar los titulares");
-      }
+      const json = await loadHeadlinesClient();
       setData(json);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error de red");
@@ -56,9 +46,19 @@ export function HeadlinesDashboard() {
         <p className="text-sm text-muted-foreground">
           Titulares de {newspaperSources.filter((s) => s.enabled !== false).length}{" "}
           medios. Uso personal — enlace al original en cada noticia.
+          {isStaticHosting && data?.fetchedAt ? (
+            <span className="block text-xs mt-1">
+              Datos del despliegue:{" "}
+              {new Intl.DateTimeFormat("es-ES", {
+                dateStyle: "medium",
+                timeStyle: "short",
+              }).format(new Date(data.fetchedAt))}
+              . En GitHub Pages se actualizan con cada despliegue (push o cron).
+            </span>
+          ) : null}
         </p>
         <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
-          Actualizar
+          {isStaticHosting ? "Recargar" : "Actualizar"}
         </Button>
       </div>
 

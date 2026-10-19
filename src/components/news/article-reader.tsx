@@ -5,9 +5,72 @@ import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { assetUrl, isStaticHosting } from "@/lib/site-config";
 import type { ArticleContent } from "@/lib/newspapers/types";
 
-export function ArticleReader({ url }: { url: string }) {
+type ArticleReaderProps = {
+  url: string;
+  title?: string;
+  summary?: string;
+  source?: string;
+};
+
+function StaticArticleFallback({
+  url,
+  title,
+  summary,
+  source,
+}: ArticleReaderProps) {
+  return (
+    <article className="mx-auto max-w-3xl px-4 py-8">
+      <header className="mb-8 space-y-3 border-b pb-6">
+        <Link
+          href="/"
+          className={cn(
+            buttonVariants({ variant: "ghost", size: "sm" }),
+            "-ml-2 mb-2 inline-flex",
+          )}
+        >
+          ← Titulares
+        </Link>
+        <h1 className="text-3xl font-semibold leading-tight tracking-tight">
+          {title ?? "Noticia"}
+        </h1>
+        {source ? (
+          <p className="text-sm text-muted-foreground">{source}</p>
+        ) : null}
+        <p className="text-sm text-muted-foreground">
+          En GitHub Pages no hay servidor para extraer el artículo completo. Abre
+          la noticia en el medio original o ejecuta la app en local / Vercel para
+          la vista de lectura integrada.
+        </p>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={cn(buttonVariants(), "inline-flex")}
+        >
+          Leer en el periódico original
+        </a>
+      </header>
+      {summary ? (
+        <p className="text-lg leading-relaxed text-muted-foreground">{summary}</p>
+      ) : null}
+    </article>
+  );
+}
+
+export function ArticleReader(props: ArticleReaderProps) {
+  const { url } = props;
+
+  if (isStaticHosting) {
+    return <StaticArticleFallback {...props} />;
+  }
+
+  return <DynamicArticleReader url={url} />;
+}
+
+function DynamicArticleReader({ url }: { url: string }) {
   const [article, setArticle] = useState<ArticleContent | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -18,7 +81,9 @@ export function ArticleReader({ url }: { url: string }) {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`/api/article?url=${encodeURIComponent(url)}`);
+        const res = await fetch(
+          assetUrl(`/api/article?url=${encodeURIComponent(url)}`),
+        );
         const json = (await res.json()) as ArticleContent & { error?: string };
         if (!res.ok) throw new Error(json.error ?? "Error al cargar");
         if (!cancelled) setArticle(json);
@@ -74,7 +139,10 @@ export function ArticleReader({ url }: { url: string }) {
       <header className="mb-8 space-y-3 border-b pb-6">
         <Link
           href="/"
-          className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "-ml-2 mb-2 inline-flex")}
+          className={cn(
+            buttonVariants({ variant: "ghost", size: "sm" }),
+            "-ml-2 mb-2 inline-flex",
+          )}
         >
           ← Titulares
         </Link>
@@ -89,14 +157,16 @@ export function ArticleReader({ url }: { url: string }) {
           href={article.sourceUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className={cn(buttonVariants({ variant: "outline", size: "sm" }), "inline-flex")}
+          className={cn(
+            buttonVariants({ variant: "outline", size: "sm" }),
+            "inline-flex",
+          )}
         >
           Ver en la web del medio
         </a>
       </header>
       <div
         className="prose prose-neutral max-w-none dark:prose-invert prose-img:rounded-lg prose-a:text-primary"
-        // Contenido generado por Readability desde la fuente original
         dangerouslySetInnerHTML={{ __html: article.content }}
       />
     </article>

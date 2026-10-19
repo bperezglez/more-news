@@ -20,7 +20,13 @@ export function HeadlineCard({ headline }: { headline: Headline }) {
   const source = getSourceById(headline.sourceId);
   const accent = source?.accent ?? "#334155";
   const when = formatDate(headline.publishedAt);
-  const href = `/articulo?url=${encodeURIComponent(headline.link)}`;
+  const params = new URLSearchParams({
+    url: headline.link,
+    title: headline.title,
+    source: headline.sourceName,
+  });
+  if (headline.summary) params.set("summary", headline.summary);
+  const href = `/articulo?${params.toString()}`;
 
   return (
     <Card className="overflow-hidden transition-shadow hover:shadow-md">

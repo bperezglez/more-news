@@ -4,7 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 43123",
+    "predev": "npm run sync:headlines",
+    "sync:headlines": "tsx scripts/sync-headlines.ts",
     "build": "next build",
+    "build:pages": "npm run sync:headlines && rm -rf src/app/api && GITHUB_PAGES=true NEXT_PUBLIC_STATIC_EXPORT=true NEXT_PUBLIC_BASE_PATH=/more-news npm run build",
     "start": "next start",
     "lint": "eslint"
   },
@@ -32,6 +35,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.4.2",
     "tailwindcss": "^4",
+    "tsx": "^4.20.5",
     "typescript": "^5"
   }
 }

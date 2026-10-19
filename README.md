@@ -55,6 +55,16 @@ Esta aplicación está pensada para **consulta personal**. Los contenidos perten
 - TypeScript, Tailwind CSS, shadcn/ui
 - `rss-parser`, `@mozilla/readability`
 
-## Repositorio
+## Repositorio y despliegue
 
-Código destino: [github.com/bperezglez/more-news](https://github.com/bperezglez/more-news)
+- Repositorio: [github.com/bperezglez/more-news](https://github.com/bperezglez/more-news)
+- **GitHub + GitHub Pages + PWA**: guía paso a paso en [docs/GITHUB-Y-PAGES.md](docs/GITHUB-Y-PAGES.md)
+
+Comandos útiles:
+
+```bash
+npm run sync:headlines   # vuelca RSS → public/data/headlines.json
+npm run build:pages      # simula el build de GitHub Pages (borra API temporalmente)
+```
+
+En **GitHub Pages** la URL será `https://bperezglez.github.io/more-news/` (ajusta si cambias el nombre del repo).

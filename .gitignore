@@ -20,6 +20,9 @@
 # production
 /build
 
+# titulares generados en local/CI (se crean con npm run sync:headlines)
+/public/data/headlines.json
+
 # misc
 .DS_Store
 *.pem
