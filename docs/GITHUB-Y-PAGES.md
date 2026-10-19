@@ -88,11 +88,11 @@ Si renombras el repo, cambia `NEXT_PUBLIC_BASE_PATH` en el workflow al nombre de
 
 ```bash
 npm run build:pages
-# Restaura las APIs tras la prueba:
-git checkout -- src/app/api
 ```
 
-Salida en la carpeta `out/`.
+Salida en la carpeta `out/`. El script aparta temporalmente la API, el login y el proxy (no existen en un export estático) y los restaura al terminar.
+
+> **Pages no puede protegerse con contraseña**: es un sitio estático público. La versión con login y lectura integrada es la de Vercel (ver README). Si no quieres que los titulares sean públicos, desactiva Pages en *Settings → Pages* o borra el workflow `.github/workflows/deploy-github-pages.yml`.
 
 ---
 

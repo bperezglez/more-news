@@ -7,7 +7,7 @@
     "predev": "npm run sync:headlines",
     "sync:headlines": "tsx scripts/sync-headlines.ts",
     "build": "next build",
-    "build:pages": "npm run sync:headlines && rm -rf src/app/api src/app/login src/proxy.ts && GITHUB_PAGES=true NEXT_PUBLIC_STATIC_EXPORT=true NEXT_PUBLIC_BASE_PATH=/more-news npm run build",
+    "build:pages": "npm run sync:headlines && bash scripts/build-pages.sh",
     "start": "next start",
     "lint": "eslint"
   },
