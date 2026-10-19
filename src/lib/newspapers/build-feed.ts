@@ -83,13 +83,18 @@ export async function buildReadableFeed(): Promise<ReadableFeed> {
     CONCURRENCY,
     async (headline): Promise<ReadableHeadline | null> => {
       if (Date.now() > deadline) return null;
-      const analysis = await analyzeArticle(headline.link);
-      if (analysis.access === "free") {
-        return { ...headline, originalAccess: "free" };
+      try {
+        const analysis = await analyzeArticle(headline.link);
+        if (analysis.access === "free") {
+          return { ...headline, originalAccess: "free" };
+        }
+        const alternative = await findAlternative(headline, pool, deadline);
+        if (!alternative) return null;
+        return { ...headline, originalAccess: analysis.access, alternative };
+      } catch (err) {
+        console.error(`[build-feed] ${headline.link}:`, err);
+        return null;
       }
-      const alternative = await findAlternative(headline, pool, deadline);
-      if (!alternative) return null;
-      return { ...headline, originalAccess: analysis.access, alternative };
     },
   );
 

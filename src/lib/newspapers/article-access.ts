@@ -63,8 +63,15 @@ async function analyze(url: string): Promise<ArticleAnalysis> {
     return { access: "paywalled", detail: verdict.reason };
   }
 
-  const dom = new JSDOM(html, { url, virtualConsole: new VirtualConsole() });
-  const parsed = new Readability(dom.window.document).parse();
+  let parsed: ReturnType<Readability["parse"]>;
+  try {
+    const dom = new JSDOM(html, { url, virtualConsole: new VirtualConsole() });
+    parsed = new Readability(dom.window.document).parse();
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : "Error al procesar la página";
+    console.error(`[article-access] ${url}: ${detail}`);
+    return { access: "unextractable", detail };
+  }
   const textLength = parsed?.textContent?.trim().length ?? 0;
   if (!parsed?.content || textLength < MIN_ARTICLE_CHARS) {
     return { access: "unextractable", detail: `${textLength} caracteres` };

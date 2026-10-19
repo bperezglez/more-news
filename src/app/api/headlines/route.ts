@@ -8,6 +8,7 @@ export async function GET() {
     const feed = await getReadableFeed();
     return NextResponse.json(feed);
   } catch (err) {
+    console.error("[api/headlines]", err);
     const message = err instanceof Error ? err.message : "Error al obtener titulares";
     return NextResponse.json({ error: message }, { status: 500 });
   }
