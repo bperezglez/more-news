@@ -19,14 +19,20 @@ import type {
 const HEADLINES_PER_SOURCE = 30;
 /** Candidatos alternativos que se llegan a abrir antes de dar la noticia por no legible. */
 const MAX_CANDIDATES = 3;
-const CONCURRENCY = 8;
+const CONCURRENCY = 12;
 const FEED_TTL_MS = 15 * 60 * 1000;
+/**
+ * Tope para construir el listado. En Vercel la función tiene un tiempo máximo; las
+ * noticias que no se llegan a comprobar a tiempo se tratan como no legibles.
+ */
+const FEED_BUDGET_MS = 30_000;
 
 type Candidate = { headline: Headline; print: StoryFingerprint };
 
 async function findAlternative(
   headline: Headline,
   pool: Candidate[],
+  deadline: number,
 ): Promise<AlternativeCoverage | undefined> {
   const print = fingerprint(headline);
   const ranked = pool
@@ -41,6 +47,7 @@ async function findAlternative(
     .slice(0, MAX_CANDIDATES);
 
   for (const { c, score } of ranked) {
+    if (Date.now() > deadline) return undefined;
     const analysis = await analyzeArticle(c.headline.link);
     if (analysis.access === "free") {
       return {
@@ -61,6 +68,7 @@ async function findAlternative(
  * noticia. Las que no cumplen ninguna de las dos condiciones no se muestran.
  */
 export async function buildReadableFeed(): Promise<ReadableFeed> {
+  const deadline = Date.now() + FEED_BUDGET_MS;
   const raw = await fetchAllHeadlines();
 
   const pool: Candidate[] = raw.bySource
@@ -74,11 +82,12 @@ export async function buildReadableFeed(): Promise<ReadableFeed> {
     toAnalyze,
     CONCURRENCY,
     async (headline): Promise<ReadableHeadline | null> => {
+      if (Date.now() > deadline) return null;
       const analysis = await analyzeArticle(headline.link);
       if (analysis.access === "free") {
         return { ...headline, originalAccess: "free" };
       }
-      const alternative = await findAlternative(headline, pool);
+      const alternative = await findAlternative(headline, pool, deadline);
       if (!alternative) return null;
       return { ...headline, originalAccess: analysis.access, alternative };
     },

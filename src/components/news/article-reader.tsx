@@ -6,6 +6,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { assetUrl, isStaticHosting } from "@/lib/site-config";
+import { readJson } from "@/lib/read-json";
 import type { ArticleContent } from "@/lib/newspapers/types";
 
 type ArticleReaderProps = {
@@ -120,12 +121,12 @@ function DynamicArticleReader(props: ArticleReaderProps) {
         const res = await fetch(
           assetUrl(`/api/article?url=${encodeURIComponent(url)}`),
         );
-        const json = (await res.json()) as ArticleContent & { error?: string };
         if (res.status === 401) {
           window.location.href = assetUrl("/login");
           return;
         }
-        if (!res.ok) throw new Error(json.error ?? "Error al cargar");
+        const json = await readJson<ArticleContent>(res);
+        if (!res.ok || json.error) throw new Error(json.error ?? "Error al cargar");
         if (!cancelled) setArticle(json);
       } catch (e) {
         if (!cancelled) {

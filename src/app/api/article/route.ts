@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { analyzeArticle } from "@/lib/newspapers/article-access";
 import type { OriginalAccess } from "@/lib/newspapers/types";
 
+export const maxDuration = 30;
+
 const REASONS: Record<Exclude<OriginalAccess, "free">, string> = {
   paywalled: "Esta noticia es solo para suscriptores del medio.",
   blocked: "El medio no permite leer esta noticia desde la app.",

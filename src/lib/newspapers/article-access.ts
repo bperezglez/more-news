@@ -14,7 +14,7 @@ const FETCH_HEADERS = {
 /** Por debajo de esto suele ser una entradilla o un directo vacío, no una noticia completa. */
 const MIN_ARTICLE_CHARS = 600;
 const CACHE_TTL_MS = 30 * 60 * 1000;
-const FETCH_TIMEOUT_MS = 10_000;
+const FETCH_TIMEOUT_MS = 6_000;
 
 export type ArticleAnalysis = {
   access: OriginalAccess;

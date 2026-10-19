@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { readJson } from "@/lib/read-json";
 
 function nextPath(raw: string | null) {
   if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return "/";
@@ -29,7 +30,7 @@ export function LoginForm() {
         body: JSON.stringify({ username, password }),
       });
       if (!res.ok) {
-        const json = (await res.json().catch(() => ({}))) as { error?: string };
+        const json = await readJson<object>(res);
         throw new Error(json.error ?? "No se pudo iniciar sesión.");
       }
       window.location.href = nextPath(searchParams.get("next"));
