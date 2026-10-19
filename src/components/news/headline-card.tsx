@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { Headline } from "@/lib/newspapers/types";
+import type { ReadableHeadline } from "@/lib/newspapers/types";
 import { getSourceById } from "@/lib/newspapers/sources";
 
 function formatDate(iso?: string) {
@@ -16,17 +16,28 @@ function formatDate(iso?: string) {
   }).format(d);
 }
 
-export function HeadlineCard({ headline }: { headline: Headline }) {
-  const source = getSourceById(headline.sourceId);
-  const accent = source?.accent ?? "#334155";
-  const when = formatDate(headline.publishedAt);
+export function articleHref(headline: ReadableHeadline) {
+  const alt = headline.alternative;
   const params = new URLSearchParams({
-    url: headline.link,
+    url: alt?.link ?? headline.link,
     title: headline.title,
     source: headline.sourceName,
   });
   if (headline.summary) params.set("summary", headline.summary);
-  const href = `/articulo?${params.toString()}`;
+  if (alt) {
+    params.set("via", alt.sourceName);
+    params.set("original", headline.link);
+    params.set("access", headline.originalAccess);
+  }
+  return `/articulo?${params.toString()}`;
+}
+
+export function HeadlineCard({ headline }: { headline: ReadableHeadline }) {
+  const source = getSourceById(headline.sourceId);
+  const accent = source?.accent ?? "#334155";
+  const when = formatDate(headline.publishedAt);
+  const href = articleHref(headline);
+  const alt = headline.alternative;
 
   return (
     <Card className="overflow-hidden transition-shadow hover:shadow-md">
@@ -34,6 +45,18 @@ export function HeadlineCard({ headline }: { headline: Headline }) {
       <CardHeader className="gap-2 pb-2">
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="secondary">{headline.sourceName}</Badge>
+          {alt ? (
+            <Badge
+              variant="outline"
+              title={
+                headline.originalAccess === "paywalled"
+                  ? "El original es de pago; se lee la cobertura abierta de otro medio"
+                  : "El original no se puede leer; se lee la cobertura abierta de otro medio"
+              }
+            >
+              Leer en abierto en {alt.sourceName}
+            </Badge>
+          ) : null}
           {when ? (
             <span className="text-xs text-muted-foreground">{when}</span>
           ) : null}

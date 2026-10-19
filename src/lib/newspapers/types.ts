@@ -1,5 +1,11 @@
 export type NewspaperId = string;
 
+/**
+ * - `principal`: sus titulares aparecen en el listado.
+ * - `contraste`: solo se usa para buscar la misma noticia en abierto.
+ */
+export type SourceRole = "principal" | "contraste";
+
 export interface NewspaperSource {
   id: NewspaperId;
   name: string;
@@ -7,6 +13,7 @@ export interface NewspaperSource {
   website: string;
   /** Color de acento en la UI (hex) */
   accent: string;
+  role: SourceRole;
   enabled?: boolean;
 }
 
@@ -19,6 +26,36 @@ export interface Headline {
   imageUrl?: string;
   sourceId: NewspaperId;
   sourceName: string;
+}
+
+/** Por qué no se puede leer el original dentro de la app. */
+export type OriginalAccess = "free" | "paywalled" | "blocked" | "unextractable";
+
+export interface AlternativeCoverage {
+  link: string;
+  title: string;
+  sourceId: NewspaperId;
+  sourceName: string;
+  similarity: number;
+}
+
+export interface ReadableHeadline extends Headline {
+  originalAccess: OriginalAccess;
+  /** Presente cuando el original no es legible y se lee la cobertura de otro medio. */
+  alternative?: AlternativeCoverage;
+}
+
+export interface SourceSummary {
+  source: { id: NewspaperId; name: string };
+  headlines: ReadableHeadline[];
+  hiddenCount: number;
+  error?: string;
+}
+
+export interface ReadableFeed {
+  headlines: ReadableHeadline[];
+  bySource: SourceSummary[];
+  fetchedAt: string;
 }
 
 export interface ArticleContent {

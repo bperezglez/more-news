@@ -33,6 +33,9 @@ function ArticuloContent() {
       title={searchParams.get("title") ?? undefined}
       summary={searchParams.get("summary") ?? undefined}
       source={searchParams.get("source") ?? undefined}
+      via={searchParams.get("via") ?? undefined}
+      original={searchParams.get("original") ?? undefined}
+      access={searchParams.get("access") ?? undefined}
     />
   );
 }

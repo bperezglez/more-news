@@ -35,8 +35,8 @@ jobs:
       - name: Sincronizar titulares (RSS → JSON)
         run: npm run sync:headlines
 
-      - name: Preparar export estático (sin rutas API)
-        run: rm -rf src/app/api
+      - name: Preparar export estático (sin API, login ni proxy)
+        run: rm -rf src/app/api src/app/login src/proxy.ts
 
       - name: Build estático
         run: npm run build

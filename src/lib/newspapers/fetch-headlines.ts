@@ -43,7 +43,15 @@ export async function fetchHeadlinesForSource(
   source: NewspaperSource,
 ): Promise<Headline[]> {
   const feed = await parser.parseURL(source.feedUrl);
-  return (feed.items ?? []).slice(0, 40).map((item) => ({
+  const items = (feed.items ?? []).filter((item) => {
+    if (!item.link) return false;
+    try {
+      return new URL(item.link).pathname.length > 1;
+    } catch {
+      return false;
+    }
+  });
+  return items.slice(0, 40).map((item) => ({
     id: stableId(item.link ?? item.guid ?? item.title ?? source.id, item.title ?? ""),
     title: (item.title ?? "Sin título").trim(),
     link: (item.link ?? item.guid ?? source.website).trim(),

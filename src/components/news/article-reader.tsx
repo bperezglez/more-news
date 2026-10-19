@@ -13,16 +13,53 @@ type ArticleReaderProps = {
   title?: string;
   summary?: string;
   source?: string;
+  /** Medio cuya cobertura abierta se está leyendo en lugar del original. */
+  via?: string;
+  original?: string;
+  access?: string;
 };
 
-function StaticArticleFallback({
-  url,
-  title,
-  summary,
-  source,
-}: ArticleReaderProps) {
+function pressReaderSearchUrl(title: string) {
+  const params = new URLSearchParams({ query: title, languages: "es" });
+  return `https://www.pressreader.com/search?${params.toString()}`;
+}
+
+function CoverageNotice({ via, original, access, source, title }: ArticleReaderProps) {
+  if (!via || !original) return null;
+  const reason =
+    access === "paywalled"
+      ? `La noticia original de ${source ?? "este medio"} es solo para suscriptores.`
+      : `La noticia original de ${source ?? "este medio"} no se puede leer desde la app.`;
+  return (
+    <div className="mb-6 space-y-2 rounded-lg border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-950 dark:border-sky-900 dark:bg-sky-950/40 dark:text-sky-100">
+      <p>
+        {reason} Estás leyendo la cobertura en abierto de <strong>{via}</strong> sobre
+        el mismo hecho.
+      </p>
+      <div className="flex flex-wrap gap-x-4 gap-y-1">
+        <a href={original} target="_blank" rel="noopener noreferrer" className="underline">
+          Ver original en {source ?? "el medio"}
+        </a>
+        {title ? (
+          <a
+            href={pressReaderSearchUrl(title)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline"
+          >
+            Buscar en PressReader (con tu carné de biblioteca vía eBiblio)
+          </a>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function StaticArticleFallback(props: ArticleReaderProps) {
+  const { url, title, summary, source, via } = props;
   return (
     <article className="mx-auto max-w-3xl px-4 py-8">
+      <CoverageNotice {...props} />
       <header className="mb-8 space-y-3 border-b pb-6">
         <Link
           href="/"
@@ -50,7 +87,7 @@ function StaticArticleFallback({
           rel="noopener noreferrer"
           className={cn(buttonVariants(), "inline-flex")}
         >
-          Leer en el periódico original
+          {via ? `Leer en abierto en ${via}` : "Leer en el periódico original"}
         </a>
       </header>
       {summary ? (
@@ -61,16 +98,15 @@ function StaticArticleFallback({
 }
 
 export function ArticleReader(props: ArticleReaderProps) {
-  const { url } = props;
-
   if (isStaticHosting) {
     return <StaticArticleFallback {...props} />;
   }
 
-  return <DynamicArticleReader url={url} />;
+  return <DynamicArticleReader {...props} />;
 }
 
-function DynamicArticleReader({ url }: { url: string }) {
+function DynamicArticleReader(props: ArticleReaderProps) {
+  const { url } = props;
   const [article, setArticle] = useState<ArticleContent | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -85,6 +121,10 @@ function DynamicArticleReader({ url }: { url: string }) {
           assetUrl(`/api/article?url=${encodeURIComponent(url)}`),
         );
         const json = (await res.json()) as ArticleContent & { error?: string };
+        if (res.status === 401) {
+          window.location.href = assetUrl("/login");
+          return;
+        }
         if (!res.ok) throw new Error(json.error ?? "Error al cargar");
         if (!cancelled) setArticle(json);
       } catch (e) {
@@ -136,6 +176,7 @@ function DynamicArticleReader({ url }: { url: string }) {
 
   return (
     <article className="mx-auto max-w-3xl px-4 py-8">
+      <CoverageNotice {...props} />
       <header className="mb-8 space-y-3 border-b pb-6">
         <Link
           href="/"
