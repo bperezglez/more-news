@@ -222,15 +222,20 @@ function BackToTop() {
   );
 }
 
-export function HeadlinesDashboard() {
+type HeadlinesDashboardProps = {
+  /** Datos del servidor para el primer pintado (evita quedarse en skeleton si la hidratación tarda). */
+  initialFeed?: ReadableFeed | null;
+};
+
+export function HeadlinesDashboard({ initialFeed = null }: HeadlinesDashboardProps) {
   const allSources = useMemo(() => getAllPrincipalSources(), []);
   const allSourceIds = useMemo(() => allSources.map((s) => s.id), [allSources]);
   const defaultVisibleIds = useMemo(() => getVisibleSourceIds(allSourceIds), [allSourceIds]);
   const [visibleSourceIds, setVisibleSourceIds] = useState<Set<string> | null>(null);
   const activeVisibleIds = visibleSourceIds ?? defaultVisibleIds;
 
-  const [data, setData] = useState<ReadableFeed | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<ReadableFeed | null>(initialFeed);
+  const [loading, setLoading] = useState(!initialFeed);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<string>(ALL);
   const [accessFilters, setAccessFilters] = useState<Set<AccessFilterKind> | null>(null);

@@ -1,7 +1,10 @@
 import { HeadlinesDashboard } from "@/components/news/headlines-dashboard";
 import { SiteHeader } from "@/components/site-header";
+import { loadHeadlinesForPage } from "@/lib/newspapers/load-headlines-server";
 
-export default function Home() {
+export default async function Home() {
+  const initialFeed = await loadHeadlinesForPage();
+
   return (
     <div className="flex min-h-full flex-col">
       <SiteHeader />
@@ -15,7 +18,7 @@ export default function Home() {
             pago, buscamos la misma noticia en un medio que la publique en abierto.
           </p>
         </section>
-        <HeadlinesDashboard />
+        <HeadlinesDashboard initialFeed={initialFeed} />
       </main>
       <footer className="border-t border-border/60 px-4 py-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] text-center text-xs text-muted-foreground">
         Los contenidos pertenecen a sus respectivos medios. Esta app no los comercializa.

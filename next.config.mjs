@@ -3,6 +3,7 @@ const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 /** @type {import("next").NextConfig} */
 const nextConfig = {
+  allowedDevOrigins: ["127.0.0.1"],
   basePath: basePath || undefined,
   assetPrefix: basePath ? `${basePath}/` : undefined,
   images: {
@@ -13,10 +14,7 @@ const nextConfig = {
         output: "export",
         trailingSlash: true,
       }
-    : {
-        cacheComponents: true,
-        partialPrefetching: true,
-      }),
+    : {}),
   turbopack: {
     rules: {
       "*.css": {

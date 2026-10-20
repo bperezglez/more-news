@@ -9,6 +9,7 @@
     "dev": "next dev -p 43123",
     "predev": "npm run sync:headlines",
     "sync:headlines": "tsx scripts/sync-headlines.ts",
+    "prebuild": "npm run sync:headlines",
     "build": "next build",
     "build:pages": "npm run sync:headlines && bash scripts/build-pages.sh",
     "start": "next start",
