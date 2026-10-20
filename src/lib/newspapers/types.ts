@@ -68,3 +68,50 @@ export interface ArticleContent {
   siteName?: string;
   sourceUrl: string;
 }
+
+/** Ítem tal como viene en el RSS (orden de portada del medio). */
+export interface RawFeedItem {
+  /** Posición en el XML del RSS (0 = primer ítem del feed). */
+  feedRank: number;
+  title: string;
+  link: string;
+  guid?: string;
+  summary?: string;
+  summaryLength?: number;
+  hasFullContent: boolean;
+  contentLength?: number;
+  publishedAt?: string;
+  isoDate?: string;
+  pubDate?: string;
+  imageUrl?: string;
+  categories?: string[];
+  creator?: string;
+  /** Enlace válido para artículo (filtro pathname). */
+  passesFilter: boolean;
+  /** Posición tras quitar enlaces inválidos; coincide con `feedRank` en Headline. */
+  filteredRank?: number;
+  /** Entraría en fetchHeadlinesForSource (top 40 tras filtro). */
+  includedInAppFeed: boolean;
+  /** Entraría en buildReadableFeed (top N tras filtro, N = presupuesto por medio). */
+  analyzedInReadableFeed: boolean;
+}
+
+export interface RawFeedSourceSnapshot {
+  source: Pick<NewspaperSource, "id" | "name" | "feedUrl" | "website" | "accent">;
+  feedTitle?: string;
+  feedLink?: string;
+  feedDescription?: string;
+  feedUpdated?: string;
+  totalItemsInXml: number;
+  exportedItemCount: number;
+  itemsPassingFilter: number;
+  itemsInAppSlice: number;
+  headlinesPerSourceBudget: number;
+  items: RawFeedItem[];
+  error?: string;
+}
+
+export interface RawFeedsSnapshot {
+  bySource: RawFeedSourceSnapshot[];
+  fetchedAt: string;
+}
