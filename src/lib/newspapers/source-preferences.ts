@@ -46,6 +46,6 @@ export function mergeFeedBySource<
         src.enabled === false
           ? "RSS no disponible desde el servidor (bloqueado o URL pendiente)"
           : "Sin datos en esta carga; pulsa Actualizar",
-    } as T;
+    } as unknown as T;
   });
 }

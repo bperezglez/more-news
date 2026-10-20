@@ -1,9 +1,8 @@
-import type { NextConfig } from "next";
-
 const isGitHubPages = process.env.GITHUB_PAGES === "true";
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
-const nextConfig: NextConfig = {
+/** @type {import("next").NextConfig} */
+const nextConfig = {
   basePath: basePath || undefined,
   assetPrefix: basePath ? `${basePath}/` : undefined,
   images: {
@@ -11,7 +10,7 @@ const nextConfig: NextConfig = {
   },
   ...(isGitHubPages
     ? {
-        output: "export" as const,
+        output: "export",
         trailingSlash: true,
       }
     : {

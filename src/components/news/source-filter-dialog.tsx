@@ -58,11 +58,13 @@ export function SourceFilterDialog({ visibleIds, onChange }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          Medios ({visibleIds.size}/{allSources.length})
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger
+        render={
+          <Button variant="outline" size="sm">
+            Medios ({visibleIds.size}/{allSources.length})
+          </Button>
+        }
+      />
       <DialogContent className="max-h-[85vh] sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Medios que quiero ver</DialogTitle>
