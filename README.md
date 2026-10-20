@@ -22,6 +22,17 @@ La app queda disponible en [http://127.0.0.1:43123](http://127.0.0.1:43123).
 
 En local, si no defines `APP_USERNAME` y `APP_PASSWORD`, la app no pide login. Para probarlo, copia `.env.example` a `.env.local` y rellénalo.
 
+## Instalar como app (PWA)
+
+More News es una **aplicación web progresiva**: puedes añadirla a la pantalla de inicio y abrirla a pantalla completa.
+
+- **Android / Chrome (escritorio):** entra en la web desplegada (HTTPS), pulsa **Instalar app** en la cabecera o el icono de instalación del navegador.
+- **iPhone / iPad (Safari):** **Compartir** → **Añadir a pantalla de inicio**. La app muestra un recordatorio la primera vez.
+- **GitHub Pages:** el service worker cachea la portada y el último `headlines.json` para consulta offline básica.
+- **Vercel:** el service worker actualiza titulares con red primero y deja la última copia si pierdes conexión.
+
+Requisitos: sitio servido por **HTTPS** (en local, `127.0.0.1` sirve para desarrollar; la instalación real conviene probarla en producción).
+
 ## Añadir otro periódico
 
 Edita `src/lib/newspapers/sources.ts` y añade un objeto con:
