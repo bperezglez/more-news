@@ -41,7 +41,7 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4 rounded-xl border bg-card p-6 shadow-sm">
+    <form onSubmit={onSubmit} className="space-y-5 rounded-2xl border bg-card p-6 shadow-xl shadow-foreground/5 sm:p-7">
       <div className="space-y-2">
         <Label htmlFor="username">Usuario</Label>
         <Input
@@ -52,6 +52,7 @@ export function LoginForm() {
           required
           value={username}
           onChange={(e) => setUsername(e.target.value)}
+          className="h-11 rounded-xl"
         />
       </div>
       <div className="space-y-2">
@@ -64,14 +65,15 @@ export function LoginForm() {
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          className="h-11 rounded-xl"
         />
       </div>
       {error ? (
-        <p role="alert" className="text-sm text-destructive">
+        <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
         </p>
       ) : null}
-      <Button type="submit" className="w-full" disabled={pending}>
+      <Button type="submit" size="lg" className="h-11 w-full rounded-xl" disabled={pending}>
         {pending ? "Entrando…" : "Entrar"}
       </Button>
     </form>

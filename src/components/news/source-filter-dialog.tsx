@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { SlidersHorizontalIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -60,8 +61,17 @@ export function SourceFilterDialog({ visibleIds, onChange }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger
         render={
-          <Button variant="outline" size="sm">
-            Medios ({visibleIds.size}/{allSources.length})
+          <Button
+            variant="outline"
+            size="lg"
+            className="h-10 rounded-full px-3 sm:px-4"
+            aria-label={`Elegir medios (${visibleIds.size} de ${allSources.length})`}
+          >
+            <SlidersHorizontalIcon />
+            <span className="hidden sm:inline">Medios</span>
+            <span className="rounded-full bg-muted px-1.5 text-xs tabular-nums text-muted-foreground">
+              {visibleIds.size}
+            </span>
           </Button>
         }
       />
@@ -69,38 +79,53 @@ export function SourceFilterDialog({ visibleIds, onChange }: Props) {
         <DialogHeader>
           <DialogTitle>Medios que quiero ver</DialogTitle>
           <DialogDescription>
-            Elige en qué pestañas filtrar. La misma lógica de lectura en abierto y
-            cobertura alternativa se aplica a todos los medios activos.
+            Se guarda en este navegador. La lectura en abierto y la búsqueda de cobertura
+            alternativa funcionan igual en todos.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex gap-2">
-          <Button type="button" variant="ghost" size="sm" onClick={selectAll}>
-            Todos
-          </Button>
-          <Button type="button" variant="ghost" size="sm" onClick={selectNone}>
-            Solo uno
-          </Button>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {draft.size} de {allSources.length} seleccionados
+          </span>
+          <div className="flex gap-1">
+            <Button type="button" variant="ghost" size="sm" onClick={selectAll}>
+              Todos
+            </Button>
+            <Button type="button" variant="ghost" size="sm" onClick={selectNone}>
+              Solo uno
+            </Button>
+          </div>
         </div>
-        <ScrollArea className="h-[min(50vh,420px)] rounded-md border pr-3">
-          <ul className="space-y-1 p-3">
+        <ScrollArea className="h-[min(50vh,420px)] rounded-xl border">
+          <ul className="grid gap-0.5 p-2 sm:grid-cols-2">
             {allSources.map((source) => {
               const checked = draft.has(source.id);
               const off = source.enabled === false;
               return (
                 <li key={source.id}>
-                  <label className="flex cursor-pointer items-start gap-3 rounded-md px-2 py-2 hover:bg-muted/60">
+                  <label
+                    className={`flex min-h-11 cursor-pointer items-start gap-3 rounded-lg px-2.5 py-2.5 transition-colors hover:bg-muted/70 ${
+                      checked ? "bg-accent/60" : ""
+                    }`}
+                  >
                     <input
                       type="checkbox"
-                      className="mt-1 size-4 shrink-0 accent-primary"
+                      className="mt-0.5 size-4 shrink-0 accent-primary"
                       checked={checked}
                       onChange={() => toggle(source.id)}
                     />
                     <span className="min-w-0 flex-1 text-sm">
-                      <span className="font-medium">{source.name}</span>
+                      <span className="flex items-center gap-2 font-medium">
+                        <span
+                          className="size-2 shrink-0 rounded-full"
+                          style={{ backgroundColor: source.accent }}
+                          aria-hidden
+                        />
+                        {source.name}
+                      </span>
                       {off ? (
                         <span className="mt-0.5 block text-xs text-muted-foreground">
-                          Sin RSS en el servidor; aparecerá vacío hasta tener feed
-                          válido.
+                          Sin RSS disponible por ahora
                         </span>
                       ) : null}
                     </span>
@@ -111,7 +136,7 @@ export function SourceFilterDialog({ visibleIds, onChange }: Props) {
           </ul>
         </ScrollArea>
         <DialogFooter>
-          <Button type="button" onClick={apply}>
+          <Button type="button" size="lg" className="w-full sm:w-auto" onClick={apply}>
             Aplicar
           </Button>
         </DialogFooter>

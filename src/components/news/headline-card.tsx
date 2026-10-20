@@ -1,22 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowUpRightIcon, LockIcon, RepeatIcon } from "lucide-react";
 import { isReadableInApp } from "@/lib/newspapers/headline-rank";
 import type { ReadableHeadline } from "@/lib/newspapers/types";
 import { getSourceById } from "@/lib/newspapers/sources";
+import { formatAbsolute, formatRelative } from "@/lib/format-time";
 import { cn } from "@/lib/utils";
-
-function formatDate(iso?: string) {
-  if (!iso) return null;
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return null;
-  return new Intl.DateTimeFormat("es-ES", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(d);
-}
 
 export function articleHref(headline: ReadableHeadline) {
   const alt = headline.alternative;
@@ -42,76 +33,157 @@ function unreadableLabel(headline: ReadableHeadline): string {
   return "Sin lectura integrada";
 }
 
-export function HeadlineCard({ headline }: { headline: ReadableHeadline }) {
+function ImageFallback({ accent, name }: { accent: string; name: string }) {
+  return (
+    <div
+      className="flex size-full items-end p-4"
+      style={{
+        backgroundImage: `linear-gradient(135deg, ${accent} 0%, color-mix(in oklch, ${accent} 45%, black) 100%)`,
+      }}
+      aria-hidden
+    >
+      <span className="text-3xl font-bold tracking-tight text-white/90">{name}</span>
+    </div>
+  );
+}
+
+type Props = {
+  headline: ReadableHeadline;
+  featured?: boolean;
+};
+
+export function HeadlineCard({ headline, featured = false }: Props) {
   const source = getSourceById(headline.sourceId);
   const accent = source?.accent ?? "#334155";
-  const when = formatDate(headline.publishedAt);
-  const href = articleHref(headline);
-  const alt = headline.alternative;
   const readable = isReadableInApp(headline);
+  const alt = headline.alternative;
+  const [imageFailed, setImageFailed] = useState(false);
+  const showImage = !!headline.imageUrl && !imageFailed;
+  const relative = formatRelative(headline.publishedAt);
+
+  const linkClass =
+    "outline-none after:absolute after:inset-0 after:rounded-2xl after:content-['']";
 
   return (
-    <Card
+    <article
       className={cn(
-        "overflow-hidden transition-shadow hover:shadow-md",
-        !readable && "border-dashed opacity-90",
+        "group relative flex flex-col overflow-hidden rounded-2xl border bg-card text-card-foreground shadow-xs transition-all duration-200",
+        "hover:-translate-y-0.5 hover:border-foreground/15 hover:shadow-lg hover:shadow-foreground/5",
+        "focus-within:ring-3 focus-within:ring-ring/50 motion-reduce:transition-none motion-reduce:hover:translate-y-0",
+        featured && "sm:col-span-2 lg:row-span-2",
+        !readable && "bg-muted/40",
       )}
     >
-      <div className="h-1 w-full" style={{ backgroundColor: accent }} />
-      <CardHeader className="gap-2 pb-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="secondary">{headline.sourceName}</Badge>
-          {alt ? (
-            <Badge
-              variant="outline"
-              title={
-                headline.originalAccess === "paywalled"
-                  ? "El original es de pago; se lee la cobertura abierta de otro medio"
-                  : "El original no se puede leer; se lee la cobertura abierta de otro medio"
-              }
-            >
-              Leer en abierto en {alt.sourceName}
-            </Badge>
-          ) : null}
-          {!readable ? (
-            <Badge variant="outline" className="text-muted-foreground">
-              {unreadableLabel(headline)}
-            </Badge>
-          ) : null}
-          {when ? (
-            <span className="text-xs text-muted-foreground">{when}</span>
-          ) : null}
-        </div>
-        <CardTitle className="text-lg leading-snug">
-          <Link href={href} className="hover:underline">
-            {headline.title}
-          </Link>
-        </CardTitle>
-        {!readable ? (
-          <p className="text-xs text-muted-foreground">
-            No hay versión en abierto en otro medio. Puedes abrir el original del
-            periódico para decidir si te interesa.
-          </p>
-        ) : null}
-      </CardHeader>
-      {(headline.summary || headline.imageUrl) && (
-        <CardContent className="space-y-3 pt-0">
-          {headline.imageUrl ? (
+      {showImage || featured ? (
+        <div
+          className={cn(
+            "relative overflow-hidden bg-muted",
+            featured ? "aspect-[16/9] lg:aspect-auto lg:min-h-72 lg:flex-1" : "aspect-[16/9]",
+          )}
+        >
+          {showImage ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={headline.imageUrl}
               alt=""
-              className="max-h-40 w-full rounded-md object-cover"
-              loading="lazy"
+              loading={featured ? "eager" : "lazy"}
+              onError={() => setImageFailed(true)}
+              className={cn(
+                "size-full object-cover transition-transform duration-500 group-hover:scale-[1.03] motion-reduce:transition-none",
+                featured && "lg:absolute lg:inset-0",
+                !readable && "grayscale-[35%]",
+              )}
             />
+          ) : (
+            <ImageFallback accent={accent} name={headline.sourceName} />
+          )}
+        </div>
+      ) : null}
+
+      <div className={cn("flex flex-1 flex-col gap-2.5 p-4", featured && "sm:p-6")}>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span
+            className="size-2 shrink-0 rounded-full ring-2 ring-background"
+            style={{ backgroundColor: accent }}
+            aria-hidden
+          />
+          <span className="truncate font-medium text-foreground/80">{headline.sourceName}</span>
+          {relative ? (
+            <>
+              <span aria-hidden>·</span>
+              <time
+                dateTime={headline.publishedAt}
+                title={formatAbsolute(headline.publishedAt) ?? undefined}
+                className="shrink-0"
+              >
+                {relative}
+              </time>
+            </>
           ) : null}
-          {headline.summary ? (
-            <p className="line-clamp-3 text-sm text-muted-foreground">
-              {headline.summary}
-            </p>
-          ) : null}
-        </CardContent>
-      )}
-    </Card>
+        </div>
+
+        <h3
+          className={cn(
+            "font-semibold leading-snug tracking-tight text-pretty",
+            featured ? "text-xl sm:text-2xl lg:text-3xl" : "line-clamp-3 text-base",
+          )}
+        >
+          {readable ? (
+            <Link href={articleHref(headline)} className={linkClass}>
+              {headline.title}
+            </Link>
+          ) : (
+            <a
+              href={headline.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={linkClass}
+            >
+              {headline.title}
+              <span className="sr-only"> (abre la web del medio en otra pestaña)</span>
+            </a>
+          )}
+        </h3>
+
+        {headline.summary ? (
+          <p
+            className={cn(
+              "text-sm leading-relaxed text-muted-foreground",
+              featured ? "line-clamp-3 sm:text-base" : "line-clamp-2",
+            )}
+          >
+            {headline.summary}
+          </p>
+        ) : null}
+
+        <div className="mt-auto flex items-center justify-between gap-2 pt-1 text-xs">
+          {alt ? (
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full bg-sky-500/10 px-2.5 py-1 font-medium text-sky-700 dark:text-sky-300"
+              title="El original no se puede leer; se lee la cobertura abierta de otro medio"
+            >
+              <RepeatIcon className="size-3" aria-hidden />
+              Vía {alt.sourceName}
+            </span>
+          ) : !readable ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-1 font-medium text-amber-800 dark:text-amber-300">
+              <LockIcon className="size-3" aria-hidden />
+              {unreadableLabel(headline)}
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 font-medium text-emerald-700 dark:text-emerald-300">
+              En abierto
+            </span>
+          )}
+          <span
+            className="inline-flex items-center gap-0.5 font-medium text-muted-foreground transition-colors group-hover:text-primary"
+            aria-hidden
+          >
+            {readable ? "Leer" : "Ver original"}
+            <ArrowUpRightIcon className="size-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+          </span>
+        </div>
+      </div>
+    </article>
   );
 }

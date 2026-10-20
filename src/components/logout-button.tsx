@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { LogOutIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function LogoutButton() {
@@ -13,8 +14,15 @@ export function LogoutButton() {
   }
 
   return (
-    <Button variant="ghost" size="sm" onClick={() => void logout()} disabled={pending}>
-      Cerrar sesión
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={() => void logout()}
+      disabled={pending}
+      aria-label="Cerrar sesión"
+    >
+      <LogOutIcon />
+      <span className="hidden sm:inline">Salir</span>
     </Button>
   );
 }

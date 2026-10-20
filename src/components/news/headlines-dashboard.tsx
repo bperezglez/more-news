@@ -1,10 +1,20 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  AlertTriangleIcon,
+  ArrowUpIcon,
+  ChevronDownIcon,
+  LockIcon,
+  RefreshCwIcon,
+  SearchIcon,
+  SearchXIcon,
+  WifiOffIcon,
+  XIcon,
+} from "lucide-react";
 import { HeadlineCard } from "./headline-card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { loadHeadlinesClient } from "@/lib/newspapers/load-headlines-client";
 import { isReadableInApp } from "@/lib/newspapers/headline-rank";
 import { isStaticHosting } from "@/lib/site-config";
@@ -14,67 +24,195 @@ import {
   mergeFeedBySource,
 } from "@/lib/newspapers/source-preferences";
 import { SourceFilterDialog } from "@/components/news/source-filter-dialog";
+import { formatRelative } from "@/lib/format-time";
+import { cn } from "@/lib/utils";
 import type { ReadableFeed, ReadableHeadline } from "@/lib/newspapers/types";
 
-function TabHiddenNote({ count }: { count: number }) {
-  if (!count) return null;
+const ALL = "todos";
+const GRID = "grid gap-4 sm:grid-cols-2 lg:grid-cols-3 sm:gap-5";
+
+function normalize(text: string) {
+  return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+function matches(h: ReadableHeadline, q: string) {
+  return normalize(`${h.title} ${h.summary ?? ""} ${h.sourceName}`).includes(q);
+}
+
+function EmptyState({
+  icon: Icon,
+  title,
+  children,
+}: {
+  icon: typeof SearchXIcon;
+  title: string;
+  children?: React.ReactNode;
+}) {
   return (
-    <p className="mt-6 text-center text-xs text-muted-foreground">
-      {count === 1
-        ? "1 titular más aparece en «Todos» al final: de pago o sin cobertura en abierto."
-        : `${count} titulares más aparecen en «Todos» al final: de pago o sin cobertura en abierto.`}
-    </p>
+    <div className="flex flex-col items-center rounded-2xl border border-dashed px-6 py-16 text-center">
+      <span className="mb-4 grid size-12 place-items-center rounded-full bg-muted text-muted-foreground">
+        <Icon className="size-5" />
+      </span>
+      <p className="font-medium">{title}</p>
+      {children ? (
+        <div className="mt-1 max-w-sm text-sm text-muted-foreground">{children}</div>
+      ) : null}
+    </div>
   );
 }
 
-function TodosGrid({ headlines }: { headlines: ReadableHeadline[] }) {
-  if (!headlines.length) {
-    return (
-      <p className="py-12 text-center text-muted-foreground">
-        No hay titulares disponibles ahora mismo.
-      </p>
-    );
-  }
+function LoadingGrid() {
+  return (
+    <div className={GRID} aria-busy="true" aria-label="Cargando titulares">
+      {Array.from({ length: 7 }).map((_, i) => (
+        <div
+          key={i}
+          className={cn(
+            "overflow-hidden rounded-2xl border bg-card",
+            i === 0 && "sm:col-span-2 lg:row-span-2",
+          )}
+        >
+          <Skeleton className={cn("w-full rounded-none", i === 0 ? "aspect-[16/9] lg:h-80" : "aspect-[16/9]")} />
+          <div className="space-y-3 p-4">
+            <Skeleton className="h-3 w-1/3" />
+            <Skeleton className="h-5 w-full" />
+            <Skeleton className="h-5 w-4/5" />
+            <Skeleton className="h-3 w-2/3" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function HeadlineGrid({
+  headlines,
+  featureFirst,
+}: {
+  headlines: ReadableHeadline[];
+  featureFirst: boolean;
+}) {
+  const readable = headlines.filter(isReadableInApp);
+  const locked = headlines.filter((h) => !isReadableInApp(h));
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {headlines.map((h, index) => {
-        const prev = index > 0 ? headlines[index - 1] : undefined;
-        const showDivider =
-          prev && isReadableInApp(prev) && !isReadableInApp(h);
-        return (
-          <div key={h.id} className="contents">
-            {showDivider ? (
-              <div className="col-span-full rounded-lg border border-dashed bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
-                <p className="font-medium text-foreground">
-                  Titulares sin lectura integrada
-                </p>
-                <p className="mt-1 text-xs">
-                  Están al final del listado. Puedes abrirlas en el medio original
-                  si quieres leerlas allí (suscripción o condiciones del periódico).
-                </p>
-              </div>
-            ) : null}
-            <HeadlineCard headline={h} />
+    <div className="space-y-10">
+      {readable.length ? (
+        <div className={GRID}>
+          {readable.map((h, i) => (
+            <HeadlineCard key={h.id} headline={h} featured={featureFirst && i === 0} />
+          ))}
+        </div>
+      ) : null}
+      {locked.length ? (
+        <section aria-labelledby="locked-heading" className="space-y-4">
+          <div className="flex items-start gap-3 border-t pt-8">
+            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-300">
+              <LockIcon className="size-4" />
+            </span>
+            <div>
+              <h2 id="locked-heading" className="font-semibold">
+                De pago o sin alternativa en abierto
+                <span className="ml-2 text-sm font-normal text-muted-foreground">
+                  {locked.length}
+                </span>
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                No las encontramos gratis en otro medio. Se abren en la web original.
+              </p>
+            </div>
           </div>
-        );
-      })}
+          <div className={GRID}>
+            {locked.map((h) => (
+              <HeadlineCard key={h.id} headline={h} />
+            ))}
+          </div>
+        </section>
+      ) : null}
     </div>
+  );
+}
+
+function SourceChip({
+  active,
+  label,
+  count,
+  accent,
+  onClick,
+}: {
+  active: boolean;
+  label: string;
+  count: number;
+  accent?: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={cn(
+        "inline-flex h-9 shrink-0 snap-start items-center gap-2 rounded-full border px-3.5 text-sm font-medium whitespace-nowrap transition-colors outline-none",
+        "focus-visible:ring-3 focus-visible:ring-ring/50",
+        active
+          ? "border-foreground bg-foreground text-background"
+          : "border-border bg-card text-foreground/80 hover:border-foreground/25 hover:text-foreground",
+        !active && count === 0 && "opacity-55",
+      )}
+    >
+      {accent ? (
+        <span className="size-2 rounded-full" style={{ backgroundColor: accent }} aria-hidden />
+      ) : null}
+      {label}
+      <span
+        className={cn(
+          "rounded-full px-1.5 text-xs tabular-nums",
+          active ? "bg-background/20" : "bg-muted text-muted-foreground",
+        )}
+      >
+        {count}
+      </span>
+    </button>
+  );
+}
+
+function BackToTop() {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setVisible(window.scrollY > 900);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  return (
+    <button
+      type="button"
+      onClick={() => window.scrollTo({ top: 0 })}
+      aria-label="Volver arriba"
+      className={cn(
+        "fixed right-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-40 grid size-11 place-items-center rounded-full border bg-background/90 shadow-lg backdrop-blur transition-all outline-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:right-6 sm:bottom-6",
+        visible ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-4 opacity-0",
+      )}
+    >
+      <ArrowUpIcon className="size-4" />
+    </button>
   );
 }
 
 export function HeadlinesDashboard() {
   const allSources = useMemo(() => getAllPrincipalSources(), []);
   const allSourceIds = useMemo(() => allSources.map((s) => s.id), [allSources]);
-  const defaultVisibleIds = useMemo(
-    () => getVisibleSourceIds(allSourceIds),
-    [allSourceIds],
-  );
+  const defaultVisibleIds = useMemo(() => getVisibleSourceIds(allSourceIds), [allSourceIds]);
   const [visibleSourceIds, setVisibleSourceIds] = useState<Set<string> | null>(null);
   const activeVisibleIds = visibleSourceIds ?? defaultVisibleIds;
+
   const [data, setData] = useState<ReadableFeed | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string>(ALL);
+  const [query, setQuery] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
 
   const fetchFeed = useCallback(
     () =>
@@ -86,7 +224,6 @@ export function HeadlinesDashboard() {
         },
         (e: unknown) => {
           setError(e instanceof Error ? e.message : "Error de red");
-          setData(null);
           setLoading(false);
         },
       ),
@@ -103,133 +240,224 @@ export function HeadlinesDashboard() {
     void fetchFeed();
   }, [fetchFeed]);
 
-  const mergedBySource = useMemo(() => {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const typing =
+        target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.isContentEditable;
+      if (e.key === "/" && !typing) {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const visibleBySource = useMemo(() => {
     if (!data) return [];
-    return mergeFeedBySource(data.bySource, allSources);
-  }, [data, allSources]);
+    return mergeFeedBySource(data.bySource, allSources).filter((row) =>
+      activeVisibleIds.has(row.source.id),
+    );
+  }, [data, allSources, activeVisibleIds]);
 
-  const visibleBySource = useMemo(
-    () => mergedBySource.filter((row) => activeVisibleIds.has(row.source.id)),
-    [mergedBySource, activeVisibleIds],
+  const visibleHeadlines = useMemo(
+    () => (data ? data.headlines.filter((h) => activeVisibleIds.has(h.sourceId)) : []),
+    [data, activeVisibleIds],
   );
 
-  const visibleHeadlines = useMemo(() => {
-    if (!data) return [];
-    return data.headlines.filter((h) => activeVisibleIds.has(h.sourceId));
-  }, [data, activeVisibleIds]);
+  const sourceErrors = useMemo(() => visibleBySource.filter((s) => s.error), [visibleBySource]);
 
-  const sourceErrors = useMemo(
-    () => visibleBySource.filter((s) => s.error) ?? [],
-    [visibleBySource],
-  );
+  const activeSelection =
+    selected === ALL || visibleBySource.some((s) => s.source.id === selected) ? selected : ALL;
+  const selectedRow = visibleBySource.find((s) => s.source.id === activeSelection);
 
-  const readableInTodos = useMemo(
-    () => visibleHeadlines.filter(isReadableInApp).length ?? 0,
-    [visibleHeadlines],
-  );
+  const q = normalize(query.trim());
+  const baseList = selectedRow ? selectedRow.headlines : visibleHeadlines;
+  const shown = q ? baseList.filter((h) => matches(h, q)) : baseList;
+  const readableCount = visibleHeadlines.filter(isReadableInApp).length;
+  const updated = formatRelative(data?.fetchedAt);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">
-          Titulares de {activeVisibleIds.size} medios seleccionados ({allSources.length}{" "}
-          configurados). En «Todos», primero
-          las noticias más relevantes que puedes leer en la app (original en abierto
-          o cobertura en otro medio); al final, las de pago o sin alternativa en
-          abierto.
-          {isStaticHosting && data?.fetchedAt ? (
-            <span className="mt-1 block text-xs">
-              Datos del despliegue:{" "}
-              {new Intl.DateTimeFormat("es-ES", {
-                dateStyle: "medium",
-                timeStyle: "short",
-              }).format(new Date(data.fetchedAt))}
-              . En GitHub Pages se actualizan con cada despliegue (push o cron).
-            </span>
-          ) : null}
-        </p>
-        <div className="flex flex-wrap gap-2">
-          <SourceFilterDialog
-            visibleIds={activeVisibleIds}
-            onChange={setVisibleSourceIds}
-          />
-          <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
-            {isStaticHosting ? "Recargar" : "Actualizar"}
+    <div className="space-y-5">
+      <div className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-30 -mx-4 space-y-3 border-b border-transparent bg-background/85 px-4 py-3 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+        <div className="flex items-center gap-2">
+          <label className="relative flex-1">
+            <span className="sr-only">Buscar titulares</span>
+            <SearchIcon className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              ref={searchRef}
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  setQuery("");
+                  e.currentTarget.blur();
+                }
+              }}
+              placeholder="Buscar en titulares…"
+              enterKeyHint="search"
+              className="h-10 w-full rounded-full border bg-card pr-10 pl-10 text-sm shadow-xs transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40 [&::-webkit-search-cancel-button]:hidden"
+            />
+            {query ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setQuery("");
+                  searchRef.current?.focus();
+                }}
+                aria-label="Borrar búsqueda"
+                className="absolute top-1/2 right-2 grid size-7 -translate-y-1/2 place-items-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <XIcon className="size-4" />
+              </button>
+            ) : (
+              <kbd className="pointer-events-none absolute top-1/2 right-3 hidden -translate-y-1/2 rounded border bg-muted px-1.5 font-mono text-[11px] text-muted-foreground sm:block">
+                /
+              </kbd>
+            )}
+          </label>
+          <SourceFilterDialog visibleIds={activeVisibleIds} onChange={setVisibleSourceIds} />
+          <Button
+            variant="outline"
+            size="icon-lg"
+            className="rounded-full"
+            onClick={() => void load()}
+            disabled={loading}
+            aria-label={isStaticHosting ? "Recargar titulares" : "Actualizar titulares"}
+            title={isStaticHosting ? "Recargar" : "Actualizar"}
+          >
+            <RefreshCwIcon className={cn(loading && "animate-spin")} />
           </Button>
         </div>
+
+        {data ? (
+          <div className="relative -mx-4 sm:-mx-6 lg:-mx-8">
+            <div
+              className="scrollbar-none flex snap-x gap-2 overflow-x-auto scroll-px-4 px-4 sm:scroll-px-6 sm:px-6 lg:scroll-px-8 lg:px-8"
+              role="group"
+              aria-label="Filtrar por medio"
+            >
+              <SourceChip
+                active={activeSelection === ALL}
+                label="Todos"
+                count={visibleHeadlines.length}
+                onClick={() => setSelected(ALL)}
+              />
+              {visibleBySource.map(({ source, headlines }) => (
+                <SourceChip
+                  key={source.id}
+                  active={activeSelection === source.id}
+                  label={source.name}
+                  count={headlines.length}
+                  accent={allSources.find((s) => s.id === source.id)?.accent}
+                  onClick={() => setSelected(source.id)}
+                />
+              ))}
+            </div>
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-background to-transparent" />
+          </div>
+        ) : null}
       </div>
 
-      {sourceErrors.length > 0 ? (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
-          Algunas fuentes no respondieron:{" "}
-          {sourceErrors.map((s) => `${s.source.name} (${s.error})`).join("; ")}
+      {data ? (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
+          <span>
+            <strong className="font-semibold text-foreground tabular-nums">{readableCount}</strong>{" "}
+            para leer en la app · {activeVisibleIds.size} de {allSources.length} medios
+          </span>
+          {updated ? <span>Actualizado {updated}</span> : null}
+          {sourceErrors.length ? (
+            <details className="group w-full sm:w-auto">
+              <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-800 select-none dark:text-amber-300 [&::-webkit-details-marker]:hidden">
+                <AlertTriangleIcon className="size-3.5" />
+                {sourceErrors.length === 1
+                  ? "1 medio sin respuesta"
+                  : `${sourceErrors.length} medios sin respuesta`}
+                <ChevronDownIcon className="size-3.5 transition-transform group-open:rotate-180" />
+              </summary>
+              <ul className="mt-2 space-y-1 rounded-xl border bg-card p-3 text-xs">
+                {sourceErrors.map((s) => (
+                  <li key={s.source.id}>
+                    <span className="font-medium text-foreground">{s.source.name}:</span> {s.error}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          ) : null}
         </div>
       ) : null}
 
-      {error ? (
-        <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm">
-          {error}{" "}
-          <button type="button" className="underline" onClick={() => void load()}>
+      {error && data ? (
+        <div
+          role="alert"
+          className="flex items-center justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm"
+        >
+          <span>No se pudo actualizar: {error}</span>
+          <Button size="sm" variant="outline" onClick={() => void load()}>
             Reintentar
-          </button>
+          </Button>
         </div>
       ) : null}
 
-      {loading && !data ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 9 }).map((_, i) => (
-            <Skeleton key={i} className="h-44 w-full rounded-xl" />
-          ))}
-        </div>
+      {loading && !data ? <LoadingGrid /> : null}
+
+      {error && !data ? (
+        <EmptyState icon={WifiOffIcon} title="No se pudieron cargar los titulares">
+          <p>{error}</p>
+          <Button className="mt-4" onClick={() => void load()}>
+            <RefreshCwIcon />
+            Reintentar
+          </Button>
+        </EmptyState>
       ) : null}
 
       {data ? (
-        <Tabs defaultValue="todos">
-          <TabsList className="flex h-auto flex-wrap justify-start gap-1">
-            <TabsTrigger value="todos">
-              Todos
-              <span className="ml-1 text-xs opacity-70">({visibleHeadlines.length})</span>
-            </TabsTrigger>
-            {visibleBySource.map(({ source, headlines }) => (
-              <TabsTrigger key={source.id} value={source.id}>
-                {source.name}
-                <span className="ml-1 text-xs opacity-70">({headlines.length})</span>
-              </TabsTrigger>
-            ))}
-          </TabsList>
-          <TabsContent value="todos" className="mt-4">
-            {readableInTodos > 0 ? (
-              <p className="mb-4 text-xs text-muted-foreground">
-                {readableInTodos} con lectura integrada · ordenadas por relevancia en
-                portada y cobertura en varios medios
-              </p>
-            ) : null}
-            <TodosGrid headlines={visibleHeadlines} />
-          </TabsContent>
-          {visibleBySource.map(({ source, headlines, hiddenCount, error: sourceError }) => (
-            <TabsContent key={source.id} value={source.id} className="mt-4">
-              {sourceError ? (
-                <p className="mb-4 rounded-lg border border-dashed px-4 py-3 text-sm text-muted-foreground">
-                  {sourceError}
-                </p>
-              ) : null}
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {headlines.map((h) => (
-                  <HeadlineCard key={h.id} headline={h} />
-                ))}
+        <div
+          className={cn("transition-opacity", loading && "opacity-60")}
+          aria-live="polite"
+          aria-busy={loading}
+        >
+          {shown.length ? (
+            <HeadlineGrid headlines={shown} featureFirst={!q} />
+          ) : q ? (
+            <EmptyState icon={SearchXIcon} title={`Sin resultados para «${query.trim()}»`}>
+              <p>Prueba con otras palabras o busca en todos los medios.</p>
+              <div className="mt-4 flex justify-center gap-2">
+                <Button variant="outline" onClick={() => setQuery("")}>
+                  Borrar búsqueda
+                </Button>
+                {activeSelection !== ALL ? (
+                  <Button variant="ghost" onClick={() => setSelected(ALL)}>
+                    Ver todos los medios
+                  </Button>
+                ) : null}
               </div>
-              {!headlines.length ? (
-                <p className="py-12 text-center text-muted-foreground">
-                  {sourceError
-                    ? `No hay titulares de ${source.name} en esta carga.`
-                    : `Ningún titular legible en abierto de ${source.name} ahora mismo.`}
-                </p>
-              ) : null}
-              <TabHiddenNote count={hiddenCount} />
-            </TabsContent>
-          ))}
-        </Tabs>
+            </EmptyState>
+          ) : (
+            <EmptyState
+              icon={SearchXIcon}
+              title={
+                selectedRow
+                  ? `Nada legible en abierto de ${selectedRow.source.name} ahora mismo`
+                  : "No hay titulares disponibles ahora mismo"
+              }
+            >
+              {selectedRow?.error ? <p>{selectedRow.error}</p> : null}
+            </EmptyState>
+          )}
+          {selectedRow && selectedRow.hiddenCount > 0 && !q ? (
+            <p className="mt-8 text-center text-xs text-muted-foreground">
+              {selectedRow.hiddenCount === 1
+                ? "1 titular de pago o sin cobertura abierta aparece al final de «Todos»."
+                : `${selectedRow.hiddenCount} titulares de pago o sin cobertura abierta aparecen al final de «Todos».`}
+            </p>
+          ) : null}
+        </div>
       ) : null}
+
+      <BackToTop />
     </div>
   );
 }
