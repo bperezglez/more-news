@@ -26,9 +26,13 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
   },
   icons: {
-    icon: assetUrl("/icons/icon.svg"),
-    apple: assetUrl("/icons/icon.svg"),
+    icon: [
+      { url: assetUrl("/icons/icon-192.png"), sizes: "192x192", type: "image/png" },
+      { url: assetUrl("/icons/icon.svg"), type: "image/svg+xml" },
+    ],
+    apple: assetUrl("/icons/icon-512.png"),
   },
+  applicationName: "More News",
 };
 
 export const viewport: Viewport = {

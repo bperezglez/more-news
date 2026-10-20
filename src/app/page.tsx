@@ -1,4 +1,5 @@
 import { HeadlinesDashboard } from "@/components/news/headlines-dashboard";
+import { InstallAppHint } from "@/components/pwa/install-app-button";
 import { SiteHeader } from "@/components/site-header";
 import { loadHeadlinesForPage } from "@/lib/newspapers/load-headlines-server";
 
@@ -8,6 +9,7 @@ export default async function Home() {
   return (
     <div className="flex min-h-full flex-col">
       <SiteHeader />
+      <InstallAppHint />
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 pt-6 pb-16 sm:px-6 sm:pt-10 lg:px-8">
         <section className="mb-6 max-w-2xl sm:mb-8">
           <h1 className="text-2xl font-semibold tracking-tight text-balance sm:text-4xl">

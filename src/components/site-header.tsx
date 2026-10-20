@@ -2,6 +2,7 @@ import Link from "next/link";
 import { NewspaperIcon } from "lucide-react";
 import { LogoutButton } from "@/components/logout-button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { InstallAppButton } from "@/components/pwa/install-app-button";
 import { isStaticHosting } from "@/lib/site-config";
 
 export function SiteHeader() {
@@ -17,7 +18,8 @@ export function SiteHeader() {
           </span>
           <span className="text-base font-semibold tracking-tight">More News</span>
         </Link>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
+          <InstallAppButton />
           <ThemeToggle />
           {isStaticHosting ? null : <LogoutButton />}
         </div>
