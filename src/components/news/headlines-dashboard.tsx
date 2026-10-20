@@ -6,18 +6,55 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { loadHeadlinesClient } from "@/lib/newspapers/load-headlines-client";
+import { isReadableInApp } from "@/lib/newspapers/headline-rank";
 import { isStaticHosting } from "@/lib/site-config";
 import { getPrincipalSources } from "@/lib/newspapers/sources";
-import type { ReadableFeed } from "@/lib/newspapers/types";
+import type { ReadableFeed, ReadableHeadline } from "@/lib/newspapers/types";
 
-function HiddenNote({ count }: { count: number }) {
+function TabHiddenNote({ count }: { count: number }) {
   if (!count) return null;
   return (
     <p className="mt-6 text-center text-xs text-muted-foreground">
       {count === 1
-        ? "1 noticia oculta por no poder leerse en abierto (ni en el original ni en otro medio)."
-        : `${count} noticias ocultas por no poder leerse en abierto (ni en el original ni en otro medio).`}
+        ? "1 titular más aparece en «Todos» al final: de pago o sin cobertura en abierto."
+        : `${count} titulares más aparecen en «Todos» al final: de pago o sin cobertura en abierto.`}
     </p>
+  );
+}
+
+function TodosGrid({ headlines }: { headlines: ReadableHeadline[] }) {
+  if (!headlines.length) {
+    return (
+      <p className="py-12 text-center text-muted-foreground">
+        No hay titulares disponibles ahora mismo.
+      </p>
+    );
+  }
+
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {headlines.map((h, index) => {
+        const prev = index > 0 ? headlines[index - 1] : undefined;
+        const showDivider =
+          prev && isReadableInApp(prev) && !isReadableInApp(h);
+        return (
+          <div key={h.id} className="contents">
+            {showDivider ? (
+              <div className="col-span-full rounded-lg border border-dashed bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+                <p className="font-medium text-foreground">
+                  Titulares sin lectura integrada
+                </p>
+                <p className="mt-1 text-xs">
+                  Están al final del listado. Puedes abrirlas en el medio original
+                  si quieres leerlas allí (suscripción o condiciones del periódico).
+                </p>
+              </div>
+            ) : null}
+            <HeadlineCard headline={h} />
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
@@ -58,8 +95,8 @@ export function HeadlinesDashboard() {
     [data],
   );
 
-  const totalHidden = useMemo(
-    () => data?.bySource.reduce((n, s) => n + s.hiddenCount, 0) ?? 0,
+  const readableInTodos = useMemo(
+    () => data?.headlines.filter(isReadableInApp).length ?? 0,
     [data],
   );
 
@@ -67,11 +104,12 @@ export function HeadlinesDashboard() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
-          Titulares de {getPrincipalSources().length} medios. Solo se listan las
-          noticias que se pueden leer enteras en abierto: en el original o, si es de
-          pago, en otro medio que cubra la misma noticia.
+          Titulares de {getPrincipalSources().length} medios. En «Todos», primero
+          las noticias más relevantes que puedes leer en la app (original en abierto
+          o cobertura en otro medio); al final, las de pago o sin alternativa en
+          abierto.
           {isStaticHosting && data?.fetchedAt ? (
-            <span className="block text-xs mt-1">
+            <span className="mt-1 block text-xs">
               Datos del despliegue:{" "}
               {new Intl.DateTimeFormat("es-ES", {
                 dateStyle: "medium",
@@ -113,7 +151,10 @@ export function HeadlinesDashboard() {
       {data ? (
         <Tabs defaultValue="todos">
           <TabsList className="flex h-auto flex-wrap justify-start gap-1">
-            <TabsTrigger value="todos">Todos</TabsTrigger>
+            <TabsTrigger value="todos">
+              Todos
+              <span className="ml-1 text-xs opacity-70">({data.headlines.length})</span>
+            </TabsTrigger>
             {data.bySource.map(({ source, headlines }) => (
               <TabsTrigger key={source.id} value={source.id}>
                 {source.name}
@@ -122,17 +163,13 @@ export function HeadlinesDashboard() {
             ))}
           </TabsList>
           <TabsContent value="todos" className="mt-4">
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {data.headlines.map((h) => (
-                <HeadlineCard key={h.id} headline={h} />
-              ))}
-            </div>
-            {!data.headlines.length ? (
-              <p className="text-center text-muted-foreground py-12">
-                No hay titulares legibles en abierto ahora mismo.
+            {readableInTodos > 0 ? (
+              <p className="mb-4 text-xs text-muted-foreground">
+                {readableInTodos} con lectura integrada · ordenadas por relevancia en
+                portada y cobertura en varios medios
               </p>
             ) : null}
-            <HiddenNote count={totalHidden} />
+            <TodosGrid headlines={data.headlines} />
           </TabsContent>
           {data.bySource.map(({ source, headlines, hiddenCount }) => (
             <TabsContent key={source.id} value={source.id} className="mt-4">
@@ -141,7 +178,12 @@ export function HeadlinesDashboard() {
                   <HeadlineCard key={h.id} headline={h} />
                 ))}
               </div>
-              <HiddenNote count={hiddenCount} />
+              {!headlines.length ? (
+                <p className="py-12 text-center text-muted-foreground">
+                  Ningún titular legible en abierto de {source.name} ahora mismo.
+                </p>
+              ) : null}
+              <TabHiddenNote count={hiddenCount} />
             </TabsContent>
           ))}
         </Tabs>

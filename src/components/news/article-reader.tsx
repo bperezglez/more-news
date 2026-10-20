@@ -107,7 +107,8 @@ export function ArticleReader(props: ArticleReaderProps) {
 }
 
 function DynamicArticleReader(props: ArticleReaderProps) {
-  const { url } = props;
+  const { url, original, title, access } = props;
+  const originalUrl = original ?? url;
   const [article, setArticle] = useState<ArticleContent | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -156,14 +157,26 @@ function DynamicArticleReader(props: ArticleReaderProps) {
     return (
       <div className="mx-auto max-w-3xl space-y-4 px-4 py-12 text-center">
         <p className="text-muted-foreground">{error}</p>
-        <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={cn(buttonVariants())}
-        >
-          Abrir en el periódico original
-        </a>
+        <div className="flex flex-wrap justify-center gap-3">
+          <a
+            href={originalUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(buttonVariants())}
+          >
+            Abrir en el periódico original
+          </a>
+          {access === "paywalled" && title ? (
+            <a
+              href={pressReaderSearchUrl(title)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={cn(buttonVariants({ variant: "outline" }))}
+            >
+              Buscar en PressReader
+            </a>
+          ) : null}
+        </div>
         <div>
           <Link href="/" className={cn(buttonVariants({ variant: "ghost" }))}>
             Volver al inicio

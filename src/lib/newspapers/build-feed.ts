@@ -1,5 +1,6 @@
 import { analyzeArticle, mapWithConcurrency } from "./article-access";
 import { fetchAllHeadlines } from "./fetch-headlines";
+import { isReadableInApp, sortTodosFeed } from "./headline-rank";
 import {
   fingerprint,
   SAME_STORY_THRESHOLD,
@@ -63,9 +64,8 @@ async function findAlternative(
 }
 
 /**
- * Construye el listado solo con noticias que se pueden leer enteras dentro de la app:
- * el original si es abierto, o la cobertura en abierto de otro medio sobre la misma
- * noticia. Las que no cumplen ninguna de las dos condiciones no se muestran.
+ * Analiza titulares de medios principales. En la vista «Todos» se ordenan por
+ * importancia entre las legibles y, al final, las que no se pueden leer en la app.
  */
 export async function buildReadableFeed(): Promise<ReadableFeed> {
   const deadline = Date.now() + FEED_BUDGET_MS;
@@ -82,40 +82,43 @@ export async function buildReadableFeed(): Promise<ReadableFeed> {
     toAnalyze,
     CONCURRENCY,
     async (headline): Promise<ReadableHeadline | null> => {
-      if (Date.now() > deadline) return null;
+      if (Date.now() > deadline) {
+        return { ...headline, originalAccess: "blocked" };
+      }
       try {
         const analysis = await analyzeArticle(headline.link);
         if (analysis.access === "free") {
           return { ...headline, originalAccess: "free" };
         }
         const alternative = await findAlternative(headline, pool, deadline);
-        if (!alternative) return null;
         return { ...headline, originalAccess: analysis.access, alternative };
       } catch (err) {
         console.error(`[build-feed] ${headline.link}:`, err);
-        return null;
+        return { ...headline, originalAccess: "blocked" };
       }
     },
   );
 
-  const visible = resolved.filter((h): h is ReadableHeadline => h !== null);
+  const all = resolved.filter((h): h is ReadableHeadline => h !== null);
+  const readable = all.filter(isReadableInApp);
 
   const bySource: SourceSummary[] = principal.map((r) => {
     const analyzed = Math.min(r.headlines.length, HEADLINES_PER_SOURCE);
-    const headlines = visible.filter((h) => h.sourceId === r.source.id);
+    const sourceAll = all.filter((h) => h.sourceId === r.source.id);
+    const sourceReadable = readable.filter((h) => h.sourceId === r.source.id);
     return {
       source: { id: r.source.id, name: r.source.name },
-      headlines,
-      hiddenCount: analyzed - headlines.length,
+      headlines: sourceReadable.sort((a, b) => {
+        const ta = a.publishedAt ? Date.parse(a.publishedAt) : 0;
+        const tb = b.publishedAt ? Date.parse(b.publishedAt) : 0;
+        return tb - ta;
+      }),
+      hiddenCount: sourceAll.length - sourceReadable.length,
       error: r.error,
     };
   });
 
-  const headlines = [...visible].sort((a, b) => {
-    const ta = a.publishedAt ? Date.parse(a.publishedAt) : 0;
-    const tb = b.publishedAt ? Date.parse(b.publishedAt) : 0;
-    return tb - ta;
-  });
+  const headlines = sortTodosFeed(all);
 
   return { headlines, bySource, fetchedAt: new Date().toISOString() };
 }

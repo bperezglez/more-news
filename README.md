@@ -61,7 +61,7 @@ No hace falta modificar rutas API ni componentes: el listado se actualiza solo.
 2. Para cada titular de un medio principal se abre el artículo y se comprueba si es de pago con las marcas que publican los propios medios (`isAccessibleForFree` de schema.org y `article:content_tier`).
 3. Si es abierto, se lee con [Mozilla Readability](https://github.com/mozilla/readability).
 4. Si es de pago, está bloqueado o no se puede extraer, se busca **la misma noticia en otro medio** (coincidencia de palabras del titular y la entradilla en una ventana de 48 h) y se usa la primera cobertura que esté en abierto.
-5. Si no hay ninguna versión abierta, la noticia **no aparece** en el listado; se indica cuántas se han ocultado.
+5. En la pestaña **Todos**, las noticias legibles se ordenan por relevancia (posición en portada del RSS y cuántos medios cubren el mismo hecho). Al **final** van las de pago o sin alternativa en abierto, para que decidas si abrir el original. En cada medio (pestaña) solo se listan las legibles.
 
 En la vista de lectura de una noticia sustituida se avisa de que el original es de pago y se enlaza al original y a una búsqueda en PressReader, que puedes leer con tu carné de biblioteca a través de eBiblio. El contenido de PressReader no se reproduce en la app: su licencia solo permite leerlo en su plataforma.
 

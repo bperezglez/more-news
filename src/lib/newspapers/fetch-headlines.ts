@@ -51,7 +51,7 @@ export async function fetchHeadlinesForSource(
       return false;
     }
   });
-  return items.slice(0, 40).map((item) => ({
+  return items.slice(0, 40).map((item, feedRank) => ({
     id: stableId(item.link ?? item.guid ?? item.title ?? source.id, item.title ?? ""),
     title: (item.title ?? "Sin título").trim(),
     link: (item.link ?? item.guid ?? source.website).trim(),
@@ -60,6 +60,7 @@ export async function fetchHeadlinesForSource(
     imageUrl: pickImage(item as unknown as Parser.Item & Record<string, unknown>),
     sourceId: source.id,
     sourceName: source.name,
+    feedRank,
   }));
 }
 

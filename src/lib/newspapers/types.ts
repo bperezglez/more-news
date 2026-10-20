@@ -26,6 +26,8 @@ export interface Headline {
   imageUrl?: string;
   sourceId: NewspaperId;
   sourceName: string;
+  /** Posición en el feed RSS (0 = primer titular del medio). */
+  feedRank?: number;
 }
 
 /** Por qué no se puede leer el original dentro de la app. */
