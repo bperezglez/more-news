@@ -1,5 +1,5 @@
 import { Readability } from "@mozilla/readability";
-import { JSDOM, VirtualConsole } from "jsdom";
+import { parseHTML } from "linkedom";
 import { detectPaywall } from "./paywall";
 import { isKnownSourceUrl } from "./sources";
 import type { ArticleContent, OriginalAccess } from "./types";
@@ -65,8 +65,8 @@ async function analyze(url: string): Promise<ArticleAnalysis> {
 
   let parsed: ReturnType<Readability["parse"]>;
   try {
-    const dom = new JSDOM(html, { url, virtualConsole: new VirtualConsole() });
-    parsed = new Readability(dom.window.document).parse();
+    const { document } = parseHTML(html);
+    parsed = new Readability(document).parse();
   } catch (err) {
     const detail = err instanceof Error ? err.message : "Error al procesar la página";
     console.error(`[article-access] ${url}: ${detail}`);

@@ -17,7 +17,7 @@ Medios de contraste (no se listan; se usan para encontrar la misma noticia en ab
 
 ## Requisitos
 
-- Node.js 22+
+- Node.js 20+
 - npm
 
 ## Desarrollo local
@@ -86,7 +86,7 @@ Esta aplicación está pensada para **consulta personal**. Los contenidos perten
 
 - [Next.js](https://nextjs.org/) (App Router)
 - TypeScript, Tailwind CSS, shadcn/ui
-- `rss-parser`, `@mozilla/readability`, `jsdom`
+- `rss-parser`, `@mozilla/readability`, `linkedom`
 
 ## Repositorio y despliegue
 
