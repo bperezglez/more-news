@@ -16,7 +16,7 @@ export const newspaperSources: NewspaperSource[] = [
   {
     id: "el-mundo",
     name: "El Mundo",
-    feedUrl: "https://www.elmundo.es/rss/portada.xml",
+    feedUrl: "https://e00-elmundo.uecdn.es/rss/portada.xml",
     website: "https://www.elmundo.es",
     accent: "#016ca2",
     role: "principal",
@@ -40,7 +40,7 @@ export const newspaperSources: NewspaperSource[] = [
   {
     id: "20-minutos",
     name: "20 Minutos",
-    feedUrl: "https://www.20minutos.es/rss",
+    feedUrl: "https://www.20minutos.es/rss/",
     website: "https://www.20minutos.es",
     accent: "#003366",
     role: "principal",
@@ -80,7 +80,7 @@ export const newspaperSources: NewspaperSource[] = [
   {
     id: "vozpopuli",
     name: "Vozpópuli",
-    feedUrl: "https://www.vozpopuli.com/rss/portada.xml",
+    feedUrl: "https://www.vozpopuli.com/rss/",
     website: "https://www.vozpopuli.com",
     accent: "#b91c1c",
     role: "principal",
@@ -97,7 +97,7 @@ export const newspaperSources: NewspaperSource[] = [
   {
     id: "publico",
     name: "Público",
-    feedUrl: "https://www.publico.es/rss/portada.xml",
+    feedUrl: "https://www.publico.es/rss/",
     website: "https://www.publico.es",
     accent: "#dc2626",
     role: "principal",
@@ -115,7 +115,7 @@ export const newspaperSources: NewspaperSource[] = [
   {
     id: "expansion",
     name: "Expansión",
-    feedUrl: "https://www.expansion.com/rss/portada.xml",
+    feedUrl: "https://e00-expansion.uecdn.es/rss/portada.xml",
     website: "https://www.expansion.com",
     accent: "#0369a1",
     role: "principal",
@@ -155,7 +155,7 @@ export const newspaperSources: NewspaperSource[] = [
   {
     id: "sport",
     name: "Sport",
-    feedUrl: "https://www.sport.es/es/rss/portada.xml",
+    feedUrl: "https://www.sport.es/rss/",
     website: "https://www.sport.es",
     accent: "#ef4444",
     role: "principal",
@@ -172,7 +172,7 @@ export const newspaperSources: NewspaperSource[] = [
   {
     id: "efe",
     name: "Agencia EFE",
-    feedUrl: "https://www.efe.com/efe/espana/portada/rss",
+    feedUrl: "https://efe.com/feed/",
     website: "https://www.efe.com",
     accent: "#64748b",
     role: "principal",
@@ -189,7 +189,7 @@ export const newspaperSources: NewspaperSource[] = [
   {
     id: "bbc-mundo",
     name: "BBC News Mundo",
-    feedUrl: "https://www.bbc.com/mundo/index.xml",
+    feedUrl: "https://feeds.bbci.co.uk/mundo/rss.xml",
     website: "https://www.bbc.com/mundo",
     accent: "#bb1919",
     role: "principal",
@@ -213,7 +213,7 @@ export const newspaperSources: NewspaperSource[] = [
   {
     id: "clarin",
     name: "Clarín",
-    feedUrl: "https://www.clarin.com/rss/",
+    feedUrl: "https://www.clarin.com/rss/lo-ultimo/",
     website: "https://www.clarin.com",
     accent: "#0ea5e9",
     role: "principal",
