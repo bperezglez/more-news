@@ -19,6 +19,12 @@ export function SiteHeader() {
           <span className="text-base font-semibold tracking-tight">More News</span>
         </Link>
         <div className="flex items-center gap-1.5">
+          <Link
+            href="/portadas"
+            className="hidden rounded-md px-2.5 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:inline"
+          >
+            Portadas RSS
+          </Link>
           <InstallAppButton />
           <ThemeToggle />
           {isStaticHosting ? null : <LogoutButton />}
