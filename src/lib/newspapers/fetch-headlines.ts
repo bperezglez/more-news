@@ -1,7 +1,7 @@
 import Parser from "rss-parser";
 import { createHash } from "crypto";
 import type { Headline, NewspaperSource } from "./types";
-import { getEnabledSources } from "./sources";
+import { getAllPrincipalSources } from "./sources";
 
 const parser = new Parser({
   timeout: 15000,
@@ -74,9 +74,16 @@ export async function fetchAllHeadlines(): Promise<{
   headlines: Headline[];
   bySource: SourceFetchResult[];
 }> {
-  const sources = getEnabledSources();
+  const sources = getAllPrincipalSources();
   const bySource = await Promise.all(
     sources.map(async (source): Promise<SourceFetchResult> => {
+      if (source.enabled === false) {
+        return {
+          source,
+          headlines: [],
+          error: "RSS no disponible desde el servidor (bloqueado o URL pendiente)",
+        };
+      }
       try {
         const headlines = await fetchHeadlinesForSource(source);
         return { source, headlines };

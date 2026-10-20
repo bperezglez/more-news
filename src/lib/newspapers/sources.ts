@@ -224,6 +224,12 @@ export function getEnabledSources(): NewspaperSource[] {
   return newspaperSources.filter((s) => s.enabled !== false);
 }
 
+/** Todos los medios principales del listado del usuario (incluidos RSS desactivados). */
+export function getAllPrincipalSources(): NewspaperSource[] {
+  return newspaperSources.filter((s) => s.role === "principal");
+}
+
+/** Medios con RSS activo en el servidor. */
 export function getPrincipalSources(): NewspaperSource[] {
   return getEnabledSources().filter((s) => s.role === "principal");
 }

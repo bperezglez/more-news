@@ -8,7 +8,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { loadHeadlinesClient } from "@/lib/newspapers/load-headlines-client";
 import { isReadableInApp } from "@/lib/newspapers/headline-rank";
 import { isStaticHosting } from "@/lib/site-config";
-import { getPrincipalSources } from "@/lib/newspapers/sources";
+import { getAllPrincipalSources } from "@/lib/newspapers/sources";
+import {
+  getVisibleSourceIds,
+  mergeFeedBySource,
+} from "@/lib/newspapers/source-preferences";
+import { SourceFilterDialog } from "@/components/news/source-filter-dialog";
 import type { ReadableFeed, ReadableHeadline } from "@/lib/newspapers/types";
 
 function TabHiddenNote({ count }: { count: number }) {
@@ -59,6 +64,14 @@ function TodosGrid({ headlines }: { headlines: ReadableHeadline[] }) {
 }
 
 export function HeadlinesDashboard() {
+  const allSources = useMemo(() => getAllPrincipalSources(), []);
+  const allSourceIds = useMemo(() => allSources.map((s) => s.id), [allSources]);
+  const defaultVisibleIds = useMemo(
+    () => getVisibleSourceIds(allSourceIds),
+    [allSourceIds],
+  );
+  const [visibleSourceIds, setVisibleSourceIds] = useState<Set<string> | null>(null);
+  const activeVisibleIds = visibleSourceIds ?? defaultVisibleIds;
   const [data, setData] = useState<ReadableFeed | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -90,21 +103,37 @@ export function HeadlinesDashboard() {
     void fetchFeed();
   }, [fetchFeed]);
 
+  const mergedBySource = useMemo(() => {
+    if (!data) return [];
+    return mergeFeedBySource(data.bySource, allSources);
+  }, [data, allSources]);
+
+  const visibleBySource = useMemo(
+    () => mergedBySource.filter((row) => activeVisibleIds.has(row.source.id)),
+    [mergedBySource, activeVisibleIds],
+  );
+
+  const visibleHeadlines = useMemo(() => {
+    if (!data) return [];
+    return data.headlines.filter((h) => activeVisibleIds.has(h.sourceId));
+  }, [data, activeVisibleIds]);
+
   const sourceErrors = useMemo(
-    () => data?.bySource.filter((s) => s.error) ?? [],
-    [data],
+    () => visibleBySource.filter((s) => s.error) ?? [],
+    [visibleBySource],
   );
 
   const readableInTodos = useMemo(
-    () => data?.headlines.filter(isReadableInApp).length ?? 0,
-    [data],
+    () => visibleHeadlines.filter(isReadableInApp).length ?? 0,
+    [visibleHeadlines],
   );
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
-          Titulares de {getPrincipalSources().length} medios. En «Todos», primero
+          Titulares de {activeVisibleIds.size} medios seleccionados ({allSources.length}{" "}
+          configurados). En «Todos», primero
           las noticias más relevantes que puedes leer en la app (original en abierto
           o cobertura en otro medio); al final, las de pago o sin alternativa en
           abierto.
@@ -119,9 +148,15 @@ export function HeadlinesDashboard() {
             </span>
           ) : null}
         </p>
-        <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
-          {isStaticHosting ? "Recargar" : "Actualizar"}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <SourceFilterDialog
+            visibleIds={activeVisibleIds}
+            onChange={setVisibleSourceIds}
+          />
+          <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
+            {isStaticHosting ? "Recargar" : "Actualizar"}
+          </Button>
+        </div>
       </div>
 
       {sourceErrors.length > 0 ? (
@@ -153,9 +188,9 @@ export function HeadlinesDashboard() {
           <TabsList className="flex h-auto flex-wrap justify-start gap-1">
             <TabsTrigger value="todos">
               Todos
-              <span className="ml-1 text-xs opacity-70">({data.headlines.length})</span>
+              <span className="ml-1 text-xs opacity-70">({visibleHeadlines.length})</span>
             </TabsTrigger>
-            {data.bySource.map(({ source, headlines }) => (
+            {visibleBySource.map(({ source, headlines }) => (
               <TabsTrigger key={source.id} value={source.id}>
                 {source.name}
                 <span className="ml-1 text-xs opacity-70">({headlines.length})</span>
@@ -169,10 +204,15 @@ export function HeadlinesDashboard() {
                 portada y cobertura en varios medios
               </p>
             ) : null}
-            <TodosGrid headlines={data.headlines} />
+            <TodosGrid headlines={visibleHeadlines} />
           </TabsContent>
-          {data.bySource.map(({ source, headlines, hiddenCount }) => (
+          {visibleBySource.map(({ source, headlines, hiddenCount, error: sourceError }) => (
             <TabsContent key={source.id} value={source.id} className="mt-4">
+              {sourceError ? (
+                <p className="mb-4 rounded-lg border border-dashed px-4 py-3 text-sm text-muted-foreground">
+                  {sourceError}
+                </p>
+              ) : null}
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {headlines.map((h) => (
                   <HeadlineCard key={h.id} headline={h} />
@@ -180,7 +220,9 @@ export function HeadlinesDashboard() {
               </div>
               {!headlines.length ? (
                 <p className="py-12 text-center text-muted-foreground">
-                  Ningún titular legible en abierto de {source.name} ahora mismo.
+                  {sourceError
+                    ? `No hay titulares de ${source.name} en esta carga.`
+                    : `Ningún titular legible en abierto de ${source.name} ahora mismo.`}
                 </p>
               ) : null}
               <TabHiddenNote count={hiddenCount} />

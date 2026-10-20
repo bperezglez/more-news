@@ -1,7 +1,7 @@
 import { analyzeArticle, mapWithConcurrency } from "./article-access";
 import { fetchAllHeadlines } from "./fetch-headlines";
 import { isReadableInApp, sortTodosFeed } from "./headline-rank";
-import { getPrincipalSources } from "./sources";
+import { getAllPrincipalSources } from "./sources";
 import {
   fingerprint,
   SAME_STORY_THRESHOLD,
@@ -19,7 +19,7 @@ import type {
 
 /** Titulares analizados por medio; baja si hay muchas fuentes para no agotar el tiempo en Vercel. */
 function headlinesPerSource(): number {
-  const n = getPrincipalSources().length;
+  const n = getAllPrincipalSources().length;
   return Math.min(25, Math.max(8, Math.floor(200 / Math.max(n, 1))));
 }
 /** Candidatos alternativos que se llegan a abrir antes de dar la noticia por no legible. */
