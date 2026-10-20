@@ -20,6 +20,16 @@ import { isReadableInApp } from "@/lib/newspapers/headline-rank";
 import { isStaticHosting } from "@/lib/site-config";
 import { getAllPrincipalSources } from "@/lib/newspapers/sources";
 import {
+  ACCESS_FILTER_KINDS,
+  ACCESS_FILTER_LABELS,
+  getHeadlineAccessKind,
+  loadAccessFilters,
+  matchesAccessFilters,
+  saveAccessFilters,
+  shouldSplitReadableSections,
+  type AccessFilterKind,
+} from "@/lib/newspapers/access-filters";
+import {
   getVisibleSourceIds,
   mergeFeedBySource,
 } from "@/lib/newspapers/source-preferences";
@@ -88,10 +98,22 @@ function LoadingGrid() {
 function HeadlineGrid({
   headlines,
   featureFirst,
+  splitSections,
 }: {
   headlines: ReadableHeadline[];
   featureFirst: boolean;
+  splitSections: boolean;
 }) {
+  if (!splitSections) {
+    return (
+      <div className={GRID}>
+        {headlines.map((h, i) => (
+          <HeadlineCard key={h.id} headline={h} featured={featureFirst && i === 0} />
+        ))}
+      </div>
+    );
+  }
+
   const readable = headlines.filter(isReadableInApp);
   const locked = headlines.filter((h) => !isReadableInApp(h));
 
@@ -211,8 +233,29 @@ export function HeadlinesDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<string>(ALL);
+  const [accessFilters, setAccessFilters] = useState<Set<AccessFilterKind> | null>(null);
   const [query, setQuery] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setAccessFilters(loadAccessFilters());
+  }, []);
+
+  const toggleAccessFilter = useCallback((kind: AccessFilterKind) => {
+    setAccessFilters((prev) => {
+      const next = new Set(prev ?? []);
+      if (next.has(kind)) next.delete(kind);
+      else next.add(kind);
+      const value = next.size ? next : null;
+      saveAccessFilters(value ?? new Set());
+      return value;
+    });
+  }, []);
+
+  const clearAccessFilters = useCallback(() => {
+    setAccessFilters(null);
+    saveAccessFilters(new Set());
+  }, []);
 
   const fetchFeed = useCallback(
     () =>
@@ -274,9 +317,22 @@ export function HeadlinesDashboard() {
 
   const q = normalize(query.trim());
   const baseList = selectedRow ? selectedRow.headlines : visibleHeadlines;
-  const shown = q ? baseList.filter((h) => matches(h, q)) : baseList;
+  const afterAccess = useMemo(
+    () => baseList.filter((h) => matchesAccessFilters(h, accessFilters)),
+    [baseList, accessFilters],
+  );
+  const shown = q ? afterAccess.filter((h) => matches(h, q)) : afterAccess;
+  const accessCounts = useMemo(() => {
+    const counts = Object.fromEntries(
+      ACCESS_FILTER_KINDS.map((k) => [k, 0]),
+    ) as Record<AccessFilterKind, number>;
+    for (const h of baseList) counts[getHeadlineAccessKind(h)]++;
+    return counts;
+  }, [baseList]);
   const readableCount = visibleHeadlines.filter(isReadableInApp).length;
   const updated = formatRelative(data?.fetchedAt);
+  const accessFilterActive = !!accessFilters?.size;
+  const splitSections = shouldSplitReadableSections(accessFilters);
 
   return (
     <div className="space-y-5">
@@ -334,6 +390,30 @@ export function HeadlinesDashboard() {
 
         {data ? (
           <div className="relative -mx-4 sm:-mx-6 lg:-mx-8">
+            <div
+              className="scrollbar-none flex snap-x gap-2 overflow-x-auto scroll-px-4 px-4 pb-2 sm:scroll-px-6 sm:px-6 lg:scroll-px-8 lg:px-8"
+              role="group"
+              aria-label="Filtrar por tipo de lectura"
+            >
+              {ACCESS_FILTER_KINDS.map((kind) => (
+                <SourceChip
+                  key={kind}
+                  active={!!accessFilters?.has(kind)}
+                  label={ACCESS_FILTER_LABELS[kind]}
+                  count={accessCounts[kind]}
+                  onClick={() => toggleAccessFilter(kind)}
+                />
+              ))}
+              {accessFilterActive ? (
+                <button
+                  type="button"
+                  onClick={clearAccessFilters}
+                  className="inline-flex h-9 shrink-0 snap-start items-center rounded-full px-3 text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                >
+                  Quitar filtros
+                </button>
+              ) : null}
+            </div>
             <div
               className="scrollbar-none flex snap-x gap-2 overflow-x-auto scroll-px-4 px-4 sm:scroll-px-6 sm:px-6 lg:scroll-px-8 lg:px-8"
               role="group"
@@ -420,14 +500,36 @@ export function HeadlinesDashboard() {
           aria-busy={loading}
         >
           {shown.length ? (
-            <HeadlineGrid headlines={shown} featureFirst={!q} />
-          ) : q ? (
-            <EmptyState icon={SearchXIcon} title={`Sin resultados para «${query.trim()}»`}>
-              <p>Prueba con otras palabras o busca en todos los medios.</p>
-              <div className="mt-4 flex justify-center gap-2">
-                <Button variant="outline" onClick={() => setQuery("")}>
-                  Borrar búsqueda
-                </Button>
+            <HeadlineGrid
+              headlines={shown}
+              featureFirst={!q && !accessFilterActive}
+              splitSections={splitSections}
+            />
+          ) : q || accessFilterActive ? (
+            <EmptyState
+              icon={SearchXIcon}
+              title={
+                q
+                  ? `Sin resultados para «${query.trim()}»`
+                  : "Ningún titular coincide con estos filtros de lectura"
+              }
+            >
+              <p>
+                {q
+                  ? "Prueba con otras palabras o relaja los filtros."
+                  : "Activa otro tipo de lectura o quita los filtros."}
+              </p>
+              <div className="mt-4 flex flex-wrap justify-center gap-2">
+                {q ? (
+                  <Button variant="outline" onClick={() => setQuery("")}>
+                    Borrar búsqueda
+                  </Button>
+                ) : null}
+                {accessFilterActive ? (
+                  <Button variant="outline" onClick={clearAccessFilters}>
+                    Quitar filtros de lectura
+                  </Button>
+                ) : null}
                 {activeSelection !== ALL ? (
                   <Button variant="ghost" onClick={() => setSelected(ALL)}>
                     Ver todos los medios
