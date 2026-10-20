@@ -22,6 +22,7 @@
 
 # titulares generados en local/CI (se crean con npm run sync:headlines)
 /public/data/headlines.json
+/public/data/raw-feeds.json
 
 # misc
 .DS_Store
