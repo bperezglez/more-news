@@ -2,26 +2,9 @@
 
 Agregador **personal** de titulares de periódicos digitales en español. Reúne noticias de varios medios en una sola vista y **solo lista las que se pueden leer enteras en abierto** dentro de la app.
 
-Medios principales (pestañas del listado):
+Medios configurados (cada uno con pestaña si el RSS está activo): El País, El Mundo, ABC, La Vanguardia, 20 Minutos, El Confidencial, elDiario.es, El Español, Infolibre, The Objective, Expansión, Cinco Días, Marca, AS, Mundo Deportivo, Europa Press, BBC News Mundo, El Tiempo (Colombia), Clarín (Argentina), y otros en `sources.ts`.
 
-- El País
-- El Confidencial
-- 20 Minutos
-- ABC
-- El Mundo
-
-Medios de contraste (no se listan; se usan para encontrar la misma noticia en abierto):
-
-- Europa Press
-- elDiario.es
-- La Vanguardia
-- El Español
-- OKDiario
-- El Independiente
-- BBC Mundo
-- COPE
-- Newtral
-- Maldita
+Algunos medios pueden ir desactivados (`enabled: false`) si su RSS bloquea el servidor (Vozpópuli, Público, El Economista, Sport, RTVE, EFE, DW). Puedes probar otra URL de feed y activarlos en `src/lib/newspapers/sources.ts`.
 
 ## Requisitos
 

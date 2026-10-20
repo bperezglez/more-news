@@ -1,6 +1,7 @@
 import { analyzeArticle, mapWithConcurrency } from "./article-access";
 import { fetchAllHeadlines } from "./fetch-headlines";
 import { isReadableInApp, sortTodosFeed } from "./headline-rank";
+import { getPrincipalSources } from "./sources";
 import {
   fingerprint,
   SAME_STORY_THRESHOLD,
@@ -16,8 +17,11 @@ import type {
   SourceSummary,
 } from "./types";
 
-/** Cuántos titulares por medio principal se analizan; el resto se descarta. */
-const HEADLINES_PER_SOURCE = 30;
+/** Titulares analizados por medio; baja si hay muchas fuentes para no agotar el tiempo en Vercel. */
+function headlinesPerSource(): number {
+  const n = getPrincipalSources().length;
+  return Math.min(25, Math.max(8, Math.floor(200 / Math.max(n, 1))));
+}
 /** Candidatos alternativos que se llegan a abrir antes de dar la noticia por no legible. */
 const MAX_CANDIDATES = 3;
 const CONCURRENCY = 12;
@@ -76,7 +80,8 @@ export async function buildReadableFeed(): Promise<ReadableFeed> {
     .map((headline) => ({ headline, print: fingerprint(headline) }));
 
   const principal = raw.bySource.filter((r) => r.source.role === "principal");
-  const toAnalyze = principal.flatMap((r) => r.headlines.slice(0, HEADLINES_PER_SOURCE));
+  const perSource = headlinesPerSource();
+  const toAnalyze = principal.flatMap((r) => r.headlines.slice(0, perSource));
 
   const resolved = await mapWithConcurrency(
     toAnalyze,
@@ -103,7 +108,7 @@ export async function buildReadableFeed(): Promise<ReadableFeed> {
   const readable = all.filter(isReadableInApp);
 
   const bySource: SourceSummary[] = principal.map((r) => {
-    const analyzed = Math.min(r.headlines.length, HEADLINES_PER_SOURCE);
+    const analyzed = Math.min(r.headlines.length, perSource);
     const sourceAll = all.filter((h) => h.sourceId === r.source.id);
     const sourceReadable = readable.filter((h) => h.sourceId === r.source.id);
     return {
