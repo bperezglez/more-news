@@ -8,12 +8,20 @@ Medios principales (pestañas del listado):
 - El Confidencial
 - 20 Minutos
 - ABC
+- El Mundo
 
 Medios de contraste (no se listan; se usan para encontrar la misma noticia en abierto):
 
 - Europa Press
 - elDiario.es
 - La Vanguardia
+- El Español
+- OKDiario
+- El Independiente
+- BBC Mundo
+- COPE
+- Newtral
+- Maldita
 
 ## Requisitos
 
