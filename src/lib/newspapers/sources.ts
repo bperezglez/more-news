@@ -48,7 +48,7 @@ export const newspaperSources: NewspaperSource[] = [
   {
     id: "el-confidencial",
     name: "El Confidencial",
-    feedUrl: "https://rss.elconfidencial.com/",
+    feedUrl: "https://rss.elconfidencial.com/espana/",
     website: "https://www.elconfidencial.com",
     accent: "#c41230",
     role: "principal",
@@ -164,11 +164,10 @@ export const newspaperSources: NewspaperSource[] = [
   {
     id: "rtve",
     name: "RTVE Noticias",
-    feedUrl: "https://www.rtve.es/noticias/rss/noticias.xml",
+    feedUrl: "https://www.rtve.es/rss/temas_noticias.xml",
     website: "https://www.rtve.es/noticias",
     accent: "#f97316",
     role: "principal",
-    enabled: false,
   },
   {
     id: "efe",
@@ -198,11 +197,10 @@ export const newspaperSources: NewspaperSource[] = [
   {
     id: "dw-espanol",
     name: "DW Español",
-    feedUrl: "https://rss.dw.com/rdf/rss-sp",
+    feedUrl: "https://rss.dw.com/xml/rss-sp-all",
     website: "https://www.dw.com/es",
     accent: "#0284c7",
     role: "principal",
-    enabled: false,
   },
   {
     id: "el-tiempo",

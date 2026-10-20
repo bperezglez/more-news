@@ -4,7 +4,7 @@ Agregador **personal** de titulares de periódicos digitales en español. Reúne
 
 Medios configurados (cada uno con pestaña si el RSS está activo): El País, El Mundo, ABC, La Vanguardia, 20 Minutos, El Confidencial, elDiario.es, El Español, Infolibre, The Objective, Expansión, Cinco Días, Marca, AS, Mundo Deportivo, Europa Press, BBC News Mundo, El Tiempo (Colombia), Clarín (Argentina), y otros en `sources.ts`.
 
-Algunos medios pueden ir desactivados (`enabled: false`) si su RSS bloquea el servidor (Vozpópuli, Público, El Economista, Sport, RTVE, EFE, DW). Puedes probar otra URL de feed y activarlos en `src/lib/newspapers/sources.ts`.
+Algunos medios pueden ir desactivados (`enabled: false`) si su RSS bloquea el servidor desde el datacenter (Vozpópuli, Público, El Economista, Sport, EFE). Puedes probar otra URL de feed y activarlos en `src/lib/newspapers/sources.ts`.
 
 ## Requisitos
 
