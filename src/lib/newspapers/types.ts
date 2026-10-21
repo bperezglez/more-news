@@ -6,6 +6,23 @@ export type NewspaperId = string;
  */
 export type SourceRole = "principal" | "contraste";
 
+/** Ámbito del medio en la UI (pestañas de portada). */
+export type SourceScope = "national" | "canarias";
+
+/**
+ * Agrupación dentro de Canarias: autonómico, cabeceras provinciales o prensa insular.
+ */
+export type CanariasZone =
+  | "autonomico"
+  | "tenerife"
+  | "las-palmas"
+  | "lanzarote"
+  | "fuerteventura"
+  | "la-palma"
+  | "la-gomera"
+  | "el-hierro"
+  | "institucional";
+
 export interface NewspaperSource {
   id: NewspaperId;
   name: string;
@@ -15,6 +32,10 @@ export interface NewspaperSource {
   accent: string;
   role: SourceRole;
   enabled?: boolean;
+  /** Por defecto `national`. */
+  scope?: SourceScope;
+  /** Solo para `scope: "canarias"`. */
+  canariasZone?: CanariasZone;
 }
 
 export interface Headline {
