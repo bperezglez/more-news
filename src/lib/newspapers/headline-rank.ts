@@ -10,6 +10,7 @@ import type { Headline, ReadableHeadline } from "./types";
 
 /** Se puede leer entera en la app (original abierto o cobertura alternativa). */
 export function isReadableInApp(headline: ReadableHeadline): boolean {
+  if (headline.originalAccess === "pending") return true;
   return headline.originalAccess === "free" || !!headline.alternative;
 }
 
@@ -49,8 +50,10 @@ export function computeHeadlineImportance({ headline, print, pool }: RankInput):
 /** Orden global cuando la fuente de verdad es la portada RSS (feedRank ascendente). */
 export function sortPortadaTodosFeed(headlines: ReadableHeadline[]): ReadableHeadline[] {
   return [...headlines].sort((a, b) => {
-    const tierA = isReadableInApp(a) ? 0 : 1;
-    const tierB = isReadableInApp(b) ? 0 : 1;
+    const tierA =
+      a.originalAccess === "pending" || isReadableInApp(a) ? 0 : 1;
+    const tierB =
+      b.originalAccess === "pending" || isReadableInApp(b) ? 0 : 1;
     if (tierA !== tierB) return tierA - tierB;
 
     const rankA = a.feedRank ?? 999;

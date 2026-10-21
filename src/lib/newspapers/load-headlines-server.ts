@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { getReadableFeed } from "@/lib/newspapers/build-feed";
-import { getReadablePortadaFeed } from "@/lib/newspapers/build-portada-feed";
+import { getPortadaFeedSkeleton } from "@/lib/newspapers/build-portada-feed";
 import { isStaticHosting } from "@/lib/site-config";
 import type { ReadableFeed } from "@/lib/newspapers/types";
 
@@ -40,7 +40,7 @@ export async function loadPortadaHeadlinesForPage(): Promise<ReadableFeed | null
   }
 
   try {
-    return await getReadablePortadaFeed();
+    return await getPortadaFeedSkeleton();
   } catch (err) {
     console.error("[loadPortadaHeadlinesForPage]", err);
     return null;

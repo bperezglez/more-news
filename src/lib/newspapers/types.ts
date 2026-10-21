@@ -33,6 +33,9 @@ export interface Headline {
 /** Por qué no se puede leer el original dentro de la app. */
 export type OriginalAccess = "free" | "paywalled" | "blocked" | "unextractable";
 
+/** Acceso aún no comprobado (portada con carga progresiva). */
+export type AccessState = OriginalAccess | "pending";
+
 export interface AlternativeCoverage {
   link: string;
   title: string;
@@ -42,9 +45,11 @@ export interface AlternativeCoverage {
 }
 
 export interface ReadableHeadline extends Headline {
-  originalAccess: OriginalAccess;
+  originalAccess: AccessState;
   /** Presente cuando el original no es legible y se lee la cobertura de otro medio. */
   alternative?: AlternativeCoverage;
+  /** Orden fijo de pintado/resolución en portada (intercalado por medio). */
+  sequence?: number;
 }
 
 export interface SourceSummary {
@@ -58,6 +63,8 @@ export interface ReadableFeed {
   headlines: ReadableHeadline[];
   bySource: SourceSummary[];
   fetchedAt: string;
+  /** El cliente resuelve acceso titular a titular vía API. */
+  progressiveAccess?: boolean;
 }
 
 export interface ArticleContent {
