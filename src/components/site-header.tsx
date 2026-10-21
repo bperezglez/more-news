@@ -20,10 +20,10 @@ export function SiteHeader() {
         </Link>
         <div className="flex items-center gap-1.5">
           <Link
-            href="/portadas"
+            href="/feeds"
             className="hidden rounded-md px-2.5 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:inline"
           >
-            Portadas RSS
+            Feeds RSS
           </Link>
           <InstallAppButton />
           <ThemeToggle />

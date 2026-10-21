@@ -33,7 +33,7 @@ export async function loadHeadlinesForPage(): Promise<ReadableFeed | null> {
   }
 }
 
-/** Titulares de portada RSS para SSR en `/portadas`. */
+/** Titulares de portada RSS para SSR en la home (`/`). */
 export async function loadPortadaHeadlinesForPage(): Promise<ReadableFeed | null> {
   if (isStaticHosting) {
     return null;
