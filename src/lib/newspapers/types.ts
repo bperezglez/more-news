@@ -65,6 +65,8 @@ export interface ReadableFeed {
   fetchedAt: string;
   /** El cliente resuelve acceso titular a titular vía API. */
   progressiveAccess?: boolean;
+  /** Más titulares RSS por medio (solo cruce de cobertura gratuita, no se listan). */
+  alternativePool?: Headline[];
 }
 
 export interface ArticleContent {
