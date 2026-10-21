@@ -1,4 +1,5 @@
 import type { NewspaperSource } from "./types";
+import { canariasNewspaperSources } from "./sources-canarias";
 
 /**
  * Medios configurados por el usuario. `principal` = aparece en pestañas y en el
@@ -217,7 +218,9 @@ export const newspaperSources: NewspaperSource[] = [
     website: "https://www.clarin.com",
     accent: "#0ea5e9",
     role: "principal",
+    scope: "national",
   },
+  ...canariasNewspaperSources,
 ];
 
 export function getEnabledSources(): NewspaperSource[] {
