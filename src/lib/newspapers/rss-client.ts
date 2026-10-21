@@ -1,4 +1,11 @@
 import Parser from "rss-parser";
+import { normalizeNewsText, readResponseText } from "./text-encoding";
+
+const RSS_FETCH_HEADERS = {
+  "User-Agent":
+    "MoreNews/1.0 (uso personal; agregador de titulares) Mozilla/5.0 compatible",
+  Accept: "application/rss+xml, application/xml, text/xml, */*",
+};
 
 export const rssParser = new Parser({
   timeout: 15000,
@@ -8,11 +15,7 @@ export const rssParser = new Parser({
       ["media:thumbnail", "mediaThumbnail", { keepArray: false }],
     ],
   },
-  headers: {
-    "User-Agent":
-      "MoreNews/1.0 (uso personal; agregador de titulares) Mozilla/5.0 compatible",
-    Accept: "application/rss+xml, application/xml, text/xml, */*",
-  },
+  headers: RSS_FETCH_HEADERS,
 });
 
 export function itemHasArticleLink(item: Parser.Item): boolean {
@@ -54,4 +57,25 @@ export function normalizeCategories(item: Parser.Item): string[] | undefined {
   });
   const unique = [...new Set(flat.filter(Boolean))];
   return unique.length ? unique : undefined;
+}
+
+const RSS_FETCH_TIMEOUT_MS = 15_000;
+
+/** Descarga RSS con charset correcto y parsea el XML. */
+export async function fetchRssFeed(url: string) {
+  const response = await fetch(url, {
+    headers: RSS_FETCH_HEADERS,
+    redirect: "follow",
+    cache: "no-store",
+    signal: AbortSignal.timeout(RSS_FETCH_TIMEOUT_MS),
+  });
+  if (!response.ok) {
+    throw new Error(`RSS HTTP ${response.status}`);
+  }
+  const xml = await readResponseText(response);
+  return rssParser.parseString(xml);
+}
+
+export function normalizeRssText(value: string | undefined): string | undefined {
+  return normalizeNewsText(value);
 }

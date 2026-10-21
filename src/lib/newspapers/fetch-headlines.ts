@@ -1,18 +1,18 @@
 import type { Headline, NewspaperSource } from "./types";
 import { getAllPrincipalSources } from "./sources";
 import { stableHeadlineId } from "./headline-id";
-import { itemHasArticleLink, pickImage, rssParser } from "./rss-client";
+import { fetchRssFeed, itemHasArticleLink, normalizeRssText, pickImage } from "./rss-client";
 
 export async function fetchHeadlinesForSource(
   source: NewspaperSource,
 ): Promise<Headline[]> {
-  const feed = await rssParser.parseURL(source.feedUrl);
+  const feed = await fetchRssFeed(source.feedUrl);
   const items = (feed.items ?? []).filter((item) => itemHasArticleLink(item));
   return items.slice(0, 40).map((item, feedRank) => ({
     id: stableHeadlineId(item.link ?? item.guid ?? item.title ?? source.id, item.title ?? ""),
-    title: (item.title ?? "Sin título").trim(),
+    title: normalizeRssText(item.title ?? "Sin título") ?? "Sin título",
     link: (item.link ?? item.guid ?? source.website).trim(),
-    summary: item.contentSnippet?.trim() || item.summary?.trim(),
+    summary: normalizeRssText(item.contentSnippet?.trim() || item.summary?.trim()),
     publishedAt: item.isoDate ?? item.pubDate,
     imageUrl: pickImage(item as unknown as Record<string, unknown> & typeof item),
     sourceId: source.id,

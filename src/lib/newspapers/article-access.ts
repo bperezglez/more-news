@@ -2,6 +2,7 @@ import { Readability } from "@mozilla/readability";
 import { parseHTML } from "linkedom";
 import { detectPaywall } from "./paywall";
 import { isKnownSourceUrl } from "./sources";
+import { normalizeNewsText, readResponseText } from "./text-encoding";
 import type { ArticleContent, OriginalAccess } from "./types";
 
 const FETCH_HEADERS = {
@@ -36,11 +37,11 @@ function cacheKey(url: string): string {
 
 function toArticleContent(url: string, parsed: NonNullable<ReturnType<Readability["parse"]>>): ArticleContent {
   return {
-    title: parsed.title ?? "Artículo",
+    title: normalizeNewsText(parsed.title ?? "Artículo") ?? "Artículo",
     content: parsed.content ?? "",
-    excerpt: parsed.excerpt ?? undefined,
-    byline: parsed.byline ?? undefined,
-    siteName: parsed.siteName ?? undefined,
+    excerpt: normalizeNewsText(parsed.excerpt ?? undefined),
+    byline: normalizeNewsText(parsed.byline ?? undefined),
+    siteName: normalizeNewsText(parsed.siteName ?? undefined),
     sourceUrl: url,
   };
 }
@@ -61,7 +62,7 @@ async function analyze(url: string): Promise<ArticleAnalysis> {
     if (!response.ok) {
       return { access: "blocked", detail: `HTTP ${response.status}` };
     }
-    html = await response.text();
+    html = await readResponseText(response);
   } catch (err) {
     return {
       access: "blocked",

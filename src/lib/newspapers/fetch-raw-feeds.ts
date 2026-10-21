@@ -5,7 +5,8 @@ import {
   itemHasArticleLink,
   normalizeCategories,
   pickImage,
-  rssParser,
+  fetchRssFeed,
+  normalizeRssText,
 } from "./rss-client";
 import type { RawFeedItem, RawFeedsSnapshot, RawFeedSourceSnapshot } from "./types";
 
@@ -18,11 +19,11 @@ type ParserItem = Parser.Item & Record<string, unknown>;
 
 function mapRawItem(item: ParserItem, feedRank: number): Omit<RawFeedItem, "filteredRank" | "includedInAppFeed" | "analyzedInReadableFeed"> {
   const passesFilter = itemHasArticleLink(item);
-  const summary = item.contentSnippet?.trim() || item.summary?.trim();
+  const summary = normalizeRssText(item.contentSnippet?.trim() || item.summary?.trim());
   const content = item.content || item["content:encoded"];
   return {
     feedRank,
-    title: (item.title ?? "Sin título").trim(),
+    title: normalizeRssText(item.title ?? "Sin título") ?? "Sin título",
     link: (item.link ?? item.guid ?? "").trim(),
     guid: typeof item.guid === "string" ? item.guid : undefined,
     summary,
@@ -64,7 +65,7 @@ export async function fetchRawFeedForSource(
   const headlinesPerSourceBudget = headlinesPerSourceForCount(getAllPrincipalSources().length);
 
   try {
-    const feed = await rssParser.parseURL(source.feedUrl);
+    const feed = await fetchRssFeed(source.feedUrl);
     const allItems = feed.items ?? [];
     const sliced =
       limitPerSource !== undefined ? allItems.slice(0, limitPerSource) : allItems;
