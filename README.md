@@ -2,7 +2,7 @@
 
 Agregador **personal** de titulares de periódicos digitales en español. Reúne noticias de varios medios en una sola vista y **solo lista las que se pueden leer enteras en abierto** dentro de la app.
 
-Medios configurados en `sources.ts` (26). Cada uno tiene pestaña; el botón **Medios** elige cuáles quieres ver (se guarda en el navegador). Los que tienen RSS bloqueado en el servidor siguen en la lista pero pueden ir vacíos hasta tener feed válido.
+Medios configurados en `sources.ts` y `sources-canarias.ts` (España/internacional + Canarias). Cada uno tiene pestaña; el botón **Medios** elige cuáles quieres ver (se guarda en el navegador). Los que tienen RSS bloqueado en el servidor siguen en la lista pero pueden ir vacíos hasta tener feed válido.
 
 Algunos medios pueden ir desactivados (`enabled: false`) si su RSS bloquea el servidor desde el datacenter (Vozpópuli, Público, El Economista, Sport, EFE). Puedes probar otra URL de feed y activarlos en `src/lib/newspapers/sources.ts`.
 
