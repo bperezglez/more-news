@@ -28,8 +28,7 @@ More News es una **aplicación web progresiva**: puedes añadirla a la pantalla 
 
 - **Android / Chrome (escritorio):** entra en la web desplegada (HTTPS), pulsa **Instalar app** en la cabecera o el icono de instalación del navegador.
 - **iPhone / iPad (Safari):** **Compartir** → **Añadir a pantalla de inicio**. La app muestra un recordatorio la primera vez.
-- **GitHub Pages:** el service worker cachea la portada y el último `headlines.json` para consulta offline básica.
-- **Vercel:** el service worker actualiza titulares con red primero y deja la última copia si pierdes conexión.
+- **Producción (Vercel):** el service worker actualiza titulares con red primero y deja la última copia si pierdes conexión.
 
 Requisitos: sitio servido por **HTTPS** (en local, `127.0.0.1` sirve para desarrollar; la instalación real conviene probarla en producción).
 
@@ -93,13 +92,11 @@ Esta aplicación está pensada para **consulta personal**. Los contenidos perten
 ## Repositorio y despliegue
 
 - Repositorio: [github.com/bperezglez/more-news](https://github.com/bperezglez/more-news)
-- **GitHub + GitHub Pages + PWA**: guía paso a paso en [docs/GITHUB-Y-PAGES.md](docs/GITHUB-Y-PAGES.md)
-
-Comandos útiles:
+- **Producción**: Vercel (rama `main`), con login, APIs y lectura integrada.
+- Guía GitHub / PWA (sin Pages): [docs/GITHUB-Y-PAGES.md](docs/GITHUB-Y-PAGES.md)
 
 ```bash
-npm run sync:headlines   # genera public/data/headlines.json con el listado legible
-npm run build:pages      # simula el build de GitHub Pages
+npm run sync:headlines   # genera public/data/headlines.json (export estático / CI)
 ```
 
-En **GitHub Pages** la URL será `https://bperezglez.github.io/more-news/`. Pages es estático: **no admite contraseña** ni lectura integrada (solo muestra titulares y enlaces). Si quieres que todo sea privado, usa Vercel y desactiva Pages.
+GitHub Pages **no se usa** en este proyecto: el workflow de despliegue fue eliminado. Si antes tenías Pages activo, en GitHub ve a **Settings → Pages** y pon **Source: None** para quitar el sitio público en `*.github.io`.

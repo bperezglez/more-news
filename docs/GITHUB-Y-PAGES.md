@@ -1,6 +1,8 @@
-# GitHub, GitHub Pages y PWA
+# GitHub y PWA
 
-Guía para tener el código en [github.com/bperezglez/more-news](https://github.com/bperezglez/more-news), desplegarlo en **GitHub Pages** e instalarlo como **PWA** en el móvil.
+> **GitHub Pages desactivado:** el despliegue en `github.io` ya no forma parte del flujo. Usa **Vercel** (rama `main`) para producción. Si el sitio antiguo sigue visible, en el repo: **Settings → Pages → Build and deployment → Source: None**.
+
+Guía para tener el código en [github.com/bperezglez/more-news](https://github.com/bperezglez/more-news) e instalarlo como **PWA** en el móvil (desde Vercel o en local).
 
 ## 1. Subir el código a GitHub (control de versiones)
 
@@ -49,61 +51,32 @@ git commit -m "Describe el cambio"
 git push github main
 ```
 
-Cada push a `main` dispara el despliegue en Pages (ver siguiente sección).
+Cada push a `main` actualiza el despliegue en **Vercel** (si el proyecto está conectado al repo).
 
 ---
 
-## 2. GitHub Pages (sitio publicado)
+## 2. Quitar GitHub Pages por completo
 
-La app en Pages es **estática**: los titulares se generan en CI desde RSS y se guardan en `public/data/headlines.json`. La lectura integrada del artículo completo (`/api/article`) solo está disponible en **local** o en un host con Node (p. ej. Vercel); en Pages verás el resumen del RSS y el botón para abrir el medio original.
+Si antes publicabas en **https://bperezglez.github.io/more-news/**:
 
-### 2.1 Activar Pages (solo la primera vez)
+1. **Settings → Pages → Source: None** (deja de servir el sitio estático).
+2. El workflow `.github/workflows/deploy-github-pages.yml` ya no está en el repo; no deberían ejecutarse nuevos despliegues.
+3. Opcional: en **Actions**, cancela o ignora ejecuciones antiguas del workflow *Desplegar en GitHub Pages*.
 
-1. En GitHub, abre el repo **more-news**.
-2. **Settings** → **Pages**.
-3. En **Build and deployment** → **Source**, elige **GitHub Actions** (no “Deploy from branch”).
+La app completa (login, APIs, lectura integrada) solo tiene sentido en **Vercel** o en local (`npm run dev`).
 
-### 2.2 Workflow incluido
-
-El archivo `.github/workflows/deploy-github-pages.yml`:
-
-- Se ejecuta en cada **push** a `main`.
-- Se puede lanzar a mano: pestaña **Actions** → *Desplegar en GitHub Pages* → **Run workflow**.
-- Cada **hora** (cron) vuelve a sincronizar RSS y redeploya.
-
-Variables de build en CI:
-
-- `NEXT_PUBLIC_BASE_PATH=/more-news`
-- URL publicada: **https://bperezglez.github.io/more-news/**
-
-Si renombras el repo, cambia `NEXT_PUBLIC_BASE_PATH` en el workflow al nombre del repo (`/<nombre-repo>`).
-
-### 2.3 Comprobar el despliegue
-
-1. **Actions** → workflow en verde.
-2. **Settings** → **Pages** → enlace del sitio.
-3. Abre la URL en el navegador.
-
-### 2.4 Probar el build de Pages en local (opcional)
-
-```bash
-npm run build:pages
-```
-
-Salida en la carpeta `out/`. El script aparta temporalmente la API, el login y el proxy (no existen en un export estático) y los restaura al terminar.
-
-> **Pages no puede protegerse con contraseña**: es un sitio estático público. La versión con login y lectura integrada es la de Vercel (ver README). Si no quieres que los titulares sean públicos, desactiva Pages en *Settings → Pages* o borra el workflow `.github/workflows/deploy-github-pages.yml`.
+> El script `npm run build:pages` y `scripts/build-pages.sh` siguen en el repo por si quieres probar un export estático en local; no forman parte del despliegue automático.
 
 ---
 
 ## 3. PWA en tu dispositivo
 
-En GitHub Pages la PWA está activa (`manifest.webmanifest` + `sw.js`). El service worker cachea la portada y el JSON de titulares para uso offline limitado.
+En producción la PWA está activa (`manifest.webmanifest` + service worker). Instálala desde la **URL de Vercel** del proyecto (HTTPS).
 
 ### 3.1 Android (Chrome)
 
-1. Abre **https://bperezglez.github.io/more-news/**
-2. Menú (⋮) → **Instalar aplicación** o **Añadir a pantalla de inicio**.
+1. Abre la URL de producción en Chrome.
+2. Menú (⋮) → **Instalar aplicación** o **Añadir a pantalla de inicio** (o el botón **Instalar app** en la cabecera).
 
 ### 3.2 iPhone / iPad (Safari)
 
@@ -112,7 +85,7 @@ En GitHub Pages la PWA está activa (`manifest.webmanifest` + `sw.js`). El servi
 
 ### 3.3 Requisitos
 
-- Sitio servido por **HTTPS** (GitHub Pages lo cumple).
+- Sitio servido por **HTTPS**.
 - Para ver cambios del service worker, a veces hace falta cerrar pestañas o esperar a un nuevo despliegue.
 
 ---
@@ -122,10 +95,10 @@ En GitHub Pages la PWA está activa (`manifest.webmanifest` + `sw.js`). El servi
 | Objetivo | Acción |
 |----------|--------|
 | Código en GitHub | `git remote add github …` + `git push -u github main` |
-| Publicar web | Settings → Pages → **GitHub Actions** |
-| Actualizar titulares en la web | Push a `main` o esperar al cron horario |
-| App en el móvil | Instalar desde la URL de Pages |
-| Lectura completa del artículo | `npm run dev` local o despliegue con servidor (Vercel) |
+| Publicar web | Vercel conectado al repo (`main`) |
+| Actualizar titulares en la web | Nuevo deploy en Vercel (push a `main`) |
+| App en el móvil | Instalar desde la URL de Vercel |
+| Lectura completa del artículo | `npm run dev` local o Vercel |
 
 ---
 
@@ -133,12 +106,9 @@ En GitHub Pages la PWA está activa (`manifest.webmanifest` + `sw.js`). El servi
 
 | Síntoma | Qué revisar |
 |---------|-------------|
-| `403` en feeds en CI | Normal en algunos medios; el workflow sigue con el resto de fuentes. |
-| Pages en blanco | Que `NEXT_PUBLIC_BASE_PATH` coincida con `/nombre-del-repo`. |
-| Workflow no corre | Permisos **Actions** activados en el repo; rama `main`. |
-| PWA no ofrece instalar | Usar Chrome/Safari; abrir la URL de Pages, no solo localhost. |
-
-Si quieres dominio propio (`noticias.tudominio.com`), en **Settings → Pages** puedes configurar un **custom domain** y actualizar DNS según la documentación de GitHub.
+| Sigue viéndose `github.io` | **Settings → Pages → Source: None** |
+| PWA no ofrece instalar | Usar Chrome/Safari; abrir la URL de producción, no solo localhost |
+| Vercel no redeploya | Proyecto enlazado al repo y rama `main` |
 
 ---
 
