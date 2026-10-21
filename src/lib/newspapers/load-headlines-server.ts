@@ -2,7 +2,6 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { getReadableFeed } from "@/lib/newspapers/build-feed";
 import { getPortadaFeedSkeleton } from "@/lib/newspapers/build-portada-feed";
-import { isStaticHosting } from "@/lib/site-config";
 import type { ReadableFeed } from "@/lib/newspapers/types";
 
 const DATA_FILE = path.join(process.cwd(), "public", "data", "headlines.json");
@@ -16,12 +15,8 @@ async function readSyncedFeed(): Promise<ReadableFeed | null> {
   }
 }
 
-/** Titulares para el HTML inicial (SSR / export estático). */
+/** Titulares para el HTML inicial (SSR). */
 export async function loadHeadlinesForPage(): Promise<ReadableFeed | null> {
-  if (isStaticHosting) {
-    return readSyncedFeed();
-  }
-
   const synced = await readSyncedFeed();
   if (synced) return synced;
 
@@ -35,10 +30,6 @@ export async function loadHeadlinesForPage(): Promise<ReadableFeed | null> {
 
 /** Titulares de portada RSS para SSR en la home (`/`). */
 export async function loadPortadaHeadlinesForPage(): Promise<ReadableFeed | null> {
-  if (isStaticHosting) {
-    return null;
-  }
-
   try {
     return await getPortadaFeedSkeleton();
   } catch (err) {

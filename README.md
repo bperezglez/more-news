@@ -96,7 +96,7 @@ Esta aplicación está pensada para **consulta personal**. Los contenidos perten
 - Guía GitHub / PWA (sin Pages): [docs/GITHUB-Y-PAGES.md](docs/GITHUB-Y-PAGES.md)
 
 ```bash
-npm run sync:headlines   # genera public/data/headlines.json (export estático / CI)
+npm run sync:headlines   # genera public/data/headlines.json (arranque local / prebuild)
 ```
 
 GitHub Pages **no se usa** en este proyecto: el workflow de despliegue fue eliminado. Si antes tenías Pages activo, en GitHub ve a **Settings → Pages** y pon **Source: None** para quitar el sitio público en `*.github.io`.

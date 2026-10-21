@@ -1,15 +1,9 @@
-import { assetUrl, isStaticHosting } from "@/lib/site-config";
+import { assetUrl } from "@/lib/site-config";
 import { readJson } from "@/lib/read-json";
 import type { ReadableFeed } from "./types";
 
 export async function loadReadableFeedClient(apiPath: string): Promise<ReadableFeed> {
-  const url = isStaticHosting
-    ? apiPath === "/api/headlines"
-      ? assetUrl(`/data/headlines.json?t=${Date.now()}`)
-      : assetUrl(`${apiPath}?t=${Date.now()}`)
-    : assetUrl(apiPath);
-
-  const res = await fetch(url, { cache: "no-store" });
+  const res = await fetch(assetUrl(apiPath), { cache: "no-store" });
   if (res.status === 401 && typeof window !== "undefined") {
     window.location.href = assetUrl("/login");
     throw new Error("Sesión caducada");
