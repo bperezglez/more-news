@@ -225,9 +225,17 @@ function BackToTop() {
 type HeadlinesDashboardProps = {
   /** Datos del servidor para el primer pintado (evita quedarse en skeleton si la hidratación tarda). */
   initialFeed?: ReadableFeed | null;
+  /** Origen del feed (por defecto titulares de la home). */
+  loadFeed?: () => Promise<ReadableFeed>;
+  /** Texto breve sobre el criterio de ordenación. */
+  orderingHint?: string;
 };
 
-export function HeadlinesDashboard({ initialFeed = null }: HeadlinesDashboardProps) {
+export function HeadlinesDashboard({
+  initialFeed = null,
+  loadFeed = loadHeadlinesClient,
+  orderingHint,
+}: HeadlinesDashboardProps) {
   const allSources = useMemo(() => getAllPrincipalSources(), []);
   const allSourceIds = useMemo(() => allSources.map((s) => s.id), [allSources]);
   const defaultVisibleIds = useMemo(() => getVisibleSourceIds(allSourceIds), [allSourceIds]);
@@ -264,7 +272,7 @@ export function HeadlinesDashboard({ initialFeed = null }: HeadlinesDashboardPro
 
   const fetchFeed = useCallback(
     () =>
-      loadHeadlinesClient().then(
+      loadFeed().then(
         (json) => {
           setData(json);
           setError(null);
@@ -275,7 +283,7 @@ export function HeadlinesDashboard({ initialFeed = null }: HeadlinesDashboardPro
           setLoading(false);
         },
       ),
-    [],
+    [loadFeed],
   );
 
   const load = useCallback(() => {
@@ -452,6 +460,7 @@ export function HeadlinesDashboard({ initialFeed = null }: HeadlinesDashboardPro
             <strong className="font-semibold text-foreground tabular-nums">{readableCount}</strong>{" "}
             para leer en la app · {activeVisibleIds.size} de {allSources.length} medios
           </span>
+          {orderingHint ? <span>{orderingHint}</span> : null}
           {updated ? <span>Actualizado {updated}</span> : null}
           {sourceErrors.length ? (
             <details className="group w-full sm:w-auto">
