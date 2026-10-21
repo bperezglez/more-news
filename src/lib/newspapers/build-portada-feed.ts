@@ -1,11 +1,12 @@
 import { fetchRawFeedsSnapshot } from "./fetch-raw-feeds";
 import { stableHeadlineId } from "./headline-id";
-import { isReadableInApp, sortPortadaTodosFeed } from "./headline-rank";
+import { sortPortadaTodosFeed } from "./headline-rank";
 import {
   headlineCandidates,
   READABLE_FEED_BUDGET_MS,
   resolveReadableHeadlines,
 } from "./readable-feed-resolve";
+import { PORTADA_HEADLINES_PER_SOURCE } from "./portada-config";
 import { getAllPrincipalSources } from "./sources";
 import type {
   Headline,
@@ -14,6 +15,8 @@ import type {
   ReadableFeed,
   SourceSummary,
 } from "./types";
+
+export { PORTADA_HEADLINES_PER_SOURCE } from "./portada-config";
 
 export type BuildPortadaFeedOptions = {
   /** Ítems del XML por medio (orden de portada). */
@@ -46,6 +49,26 @@ function comparePortadaRank(a: Headline, b: Headline): number {
   return tb - ta;
 }
 
+/** Analiza primero el titular #1 de cada medio, luego el #2, etc. (carga escalonada justa). */
+function interleavePortadaHeadlines(buckets: Headline[][]): Headline[] {
+  const maxLen = buckets.reduce((m, b) => Math.max(m, b.length), 0);
+  const out: Headline[] = [];
+  for (let rank = 0; rank < maxLen; rank++) {
+    for (const bucket of buckets) {
+      const h = bucket[rank];
+      if (h) out.push(h);
+    }
+  }
+  return out;
+}
+
+function portadaHeadlinesForRow(row: RawFeedSourceSnapshot): Headline[] {
+  return row.items
+    .filter((i) => i.passesFilter)
+    .slice(0, PORTADA_HEADLINES_PER_SOURCE)
+    .map((item) => rawItemToHeadline(item, row.source));
+}
+
 /**
  * Construye el mismo tipo de feed legible que la home, pero los titulares salen
  * del RSS en orden de portada (filteredRank) y el listado global respeta esa jerarquía.
@@ -53,36 +76,33 @@ function comparePortadaRank(a: Headline, b: Headline): number {
 export async function buildReadablePortadaFeed(
   options: BuildPortadaFeedOptions = {},
 ): Promise<ReadableFeed> {
-  const limitPerSource = options.limitPerSource ?? 40;
+  const limitPerSource =
+    options.limitPerSource ?? Math.max(PORTADA_HEADLINES_PER_SOURCE, 20);
   const deadline = Date.now() + READABLE_FEED_BUDGET_MS;
   const raw = await fetchRawFeedsSnapshot({ limitPerSource });
 
-  const headlines: Headline[] = raw.bySource.flatMap((row) =>
-    row.items.filter((i) => i.passesFilter).map((item) => rawItemToHeadline(item, row.source)),
-  );
+  const principalIds = new Set(getAllPrincipalSources().map((s) => s.id));
+  const principalRows = raw.bySource.filter((row) => principalIds.has(row.source.id));
+
+  const perSourceBuckets = principalRows.map(portadaHeadlinesForRow);
+  const headlines = perSourceBuckets.flat();
+  const toAnalyze = interleavePortadaHeadlines(perSourceBuckets);
 
   const pool = headlineCandidates(headlines);
-  const all = await resolveReadableHeadlines(headlines, pool, deadline);
-  const readable = all.filter(isReadableInApp);
+  const all = await resolveReadableHeadlines(toAnalyze, pool, deadline);
 
-  const principalIds = new Set(getAllPrincipalSources().map((s) => s.id));
-
-  const bySource: SourceSummary[] = raw.bySource
-    .filter((row) => principalIds.has(row.source.id))
-    .map((row) => {
-      const sourceAll = all
-        .filter((h) => h.sourceId === row.source.id)
-        .sort(comparePortadaRank);
-      const sourceReadable = readable
-        .filter((h) => h.sourceId === row.source.id)
-        .sort(comparePortadaRank);
-      return {
-        source: { id: row.source.id, name: row.source.name },
-        headlines: sourceReadable,
-        hiddenCount: sourceAll.length - sourceReadable.length,
-        error: row.error,
-      };
-    });
+  const bySource: SourceSummary[] = principalRows.map((row) => {
+    const sourceAll = all
+      .filter((h) => h.sourceId === row.source.id)
+      .sort(comparePortadaRank)
+      .slice(0, PORTADA_HEADLINES_PER_SOURCE);
+    return {
+      source: { id: row.source.id, name: row.source.name },
+      headlines: sourceAll,
+      hiddenCount: 0,
+      error: row.error,
+    };
+  });
 
   return {
     headlines: sortPortadaTodosFeed(all),

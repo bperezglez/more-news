@@ -3,6 +3,7 @@
 import { HeadlinesDashboard } from "@/components/news/headlines-dashboard";
 import { RawFeedsExplorer } from "@/components/news/raw-feeds-explorer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PORTADA_HEADLINES_PER_SOURCE } from "@/lib/newspapers/portada-config";
 import { loadPortadaHeadlinesClient } from "@/lib/newspapers/load-headlines-client";
 import type { ReadableFeed } from "@/lib/newspapers/types";
 
@@ -25,7 +26,7 @@ export function PortadasSection({ initialFeed = null }: PortadasSectionProps) {
         <HeadlinesDashboard
           initialFeed={initialFeed}
           loadFeed={loadPortadaHeadlinesClient}
-          orderingHint="Orden: posición en portada (feedRank)"
+          orderingHint={`Hasta ${PORTADA_HEADLINES_PER_SOURCE} titulares de portada por medio · orden feedRank`}
         />
       </TabsContent>
       <TabsContent value="rss" className="mt-0 max-w-5xl outline-none">
