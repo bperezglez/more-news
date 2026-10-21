@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangleIcon,
   ArrowUpIcon,
@@ -52,6 +52,10 @@ import {
 import { SourceFilterDialog } from "@/components/news/source-filter-dialog";
 import { formatRelative } from "@/lib/format-time";
 import { cn } from "@/lib/utils";
+import {
+  consumeHeadlinesScrollRestore,
+  restoreHeadlinesScroll,
+} from "@/lib/headlines-scroll-restore";
 import { clusterCrossSourceStories } from "@/lib/newspapers/story-clusters";
 import { useProgressivePortadaAccess } from "@/lib/newspapers/use-progressive-portada-access";
 import type { ReadableFeed, ReadableHeadline } from "@/lib/newspapers/types";
@@ -339,6 +343,7 @@ export function HeadlinesDashboard({
   const [accessFilters, setAccessFilters] = useState<Set<AccessFilterKind> | null>(null);
   const [query, setQuery] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
+  const scrollRestoreDoneRef = useRef(false);
 
   const onScopeChange = useCallback((scope: SourceScope) => {
     setScopeTab(scope);
@@ -441,6 +446,29 @@ export function HeadlinesDashboard({
     [baseList, accessFilters],
   );
   const shown = q ? afterAccess.filter((h) => matches(h, q)) : afterAccess;
+
+  useLayoutEffect(() => {
+    if (scrollRestoreDoneRef.current || !data || shown.length === 0) return;
+    const snapshot = consumeHeadlinesScrollRestore();
+    if (!snapshot) return;
+    scrollRestoreDoneRef.current = true;
+
+    const prev = window.history.scrollRestoration;
+    window.history.scrollRestoration = "manual";
+
+    const run = () => restoreHeadlinesScroll(snapshot);
+    run();
+    requestAnimationFrame(run);
+    const t1 = window.setTimeout(run, 0);
+    const t2 = window.setTimeout(run, 100);
+
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+      window.history.scrollRestoration = prev;
+    };
+  }, [data, shown.length]);
+
   const accessCounts = useMemo(() => {
     const counts = Object.fromEntries(
       ACCESS_FILTER_KINDS.map((k) => [k, 0]),
