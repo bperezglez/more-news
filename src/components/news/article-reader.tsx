@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeftIcon,
-  BookOpenIcon,
   ClockIcon,
   ExternalLinkIcon,
   InfoIcon,
@@ -91,12 +90,13 @@ function ReaderBar({ externalUrl }: { externalUrl: string }) {
 
 function SubscriptionExtractNotice({ source }: { source?: string }) {
   return (
-    <aside className="mb-8 flex gap-3 rounded-2xl border border-violet-500/25 bg-violet-500/5 p-4 text-sm">
-      <InfoIcon className="mt-0.5 size-4 shrink-0 text-violet-600 dark:text-violet-400" />
+    <aside className="mb-8 flex gap-3 rounded-2xl border border-teal-500/25 bg-teal-500/5 p-4 text-sm">
+      <InfoIcon className="mt-0.5 size-4 shrink-0 text-teal-700 dark:text-teal-300" />
       <p>
-        {source ?? "Este medio"} la marca como contenido de{" "}
-        <strong>suscripción</strong>, pero el texto venía en la página y puedes leerlo aquí.
-        Apoyar al medio en su web sigue siendo la forma oficial de acceder.
+        En la web de {source ?? "este medio"} esta noticia aparece como{" "}
+        <strong>contenido de suscripción</strong>, pero aquí puedes leer el{" "}
+        <strong>texto completo</strong> sin ir al paywall. Si quieres apoyar al medio, usa el
+        enlace a su web.
       </p>
     </aside>
   );

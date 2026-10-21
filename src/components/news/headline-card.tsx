@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowUpRightIcon, LockIcon, RepeatIcon } from "lucide-react";
+import { ArrowUpRightIcon, BookOpenIcon, LockIcon, RepeatIcon } from "lucide-react";
+import { accessChipForHeadline } from "@/lib/newspapers/access-display";
 import { isAccessPending } from "@/lib/newspapers/portada-access";
 import { isReadableInApp } from "@/lib/newspapers/headline-rank";
 import type { ReadableHeadline } from "@/lib/newspapers/types";
@@ -33,12 +34,6 @@ export function articleHref(headline: ReadableHeadline) {
   return `/articulo?${params.toString()}`;
 }
 
-function unreadableLabel(headline: ReadableHeadline): string {
-  if (headline.originalAccess === "paywalled") return "Solo suscriptores";
-  if (headline.originalAccess === "blocked") return "No accesible desde la app";
-  return "Sin lectura integrada";
-}
-
 function ImageFallback({ accent, name }: { accent: string; name: string }) {
   return (
     <div
@@ -67,6 +62,7 @@ export function HeadlineCard({ headline, featured = false }: Props) {
   const [imageFailed, setImageFailed] = useState(false);
   const showImage = !!headline.imageUrl && !imageFailed;
   const relative = formatRelative(headline.publishedAt);
+  const accessChip = accessChipForHeadline(headline);
 
   const linkClass =
     "outline-none after:absolute after:inset-0 after:rounded-2xl after:content-['']";
@@ -164,31 +160,41 @@ export function HeadlineCard({ headline, featured = false }: Props) {
         ) : null}
 
         <div className="mt-auto flex items-center justify-between gap-2 pt-1 text-xs">
-          {alt ? (
+          {accessChip.tone === "alternative" ? (
             <span
               className="inline-flex items-center gap-1.5 rounded-full bg-sky-500/10 px-2.5 py-1 font-medium text-sky-700 dark:text-sky-300"
-              title="El original no se puede leer; se lee la cobertura abierta de otro medio"
+              title={accessChip.title}
             >
               <RepeatIcon className="size-3" aria-hidden />
-              Vía {alt.sourceName}
+              {accessChip.label}
             </span>
-          ) : pending ? (
+          ) : accessChip.tone === "pending" ? (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 font-medium text-muted-foreground">
               <span className="size-2 animate-pulse rounded-full bg-primary/60" aria-hidden />
-              Comprobando acceso…
+              {accessChip.label}
             </span>
-          ) : !readable ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-1 font-medium text-amber-800 dark:text-amber-300">
+          ) : accessChip.tone === "locked" ? (
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-1 font-medium text-amber-800 dark:text-amber-300"
+              title={accessChip.title}
+            >
               <LockIcon className="size-3" aria-hidden />
-              {unreadableLabel(headline)}
+              {accessChip.label}
             </span>
-          ) : headline.originalAccess === "subscriber_readable" ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-500/10 px-2.5 py-1 font-medium text-violet-800 dark:text-violet-300">
-              Suscripción · en la app
+          ) : accessChip.tone === "subscriber-in-app" ? (
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full bg-teal-500/10 px-2.5 py-1 font-medium text-teal-800 dark:text-teal-300"
+              title={accessChip.title}
+            >
+              <BookOpenIcon className="size-3" aria-hidden />
+              {accessChip.label}
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 font-medium text-emerald-700 dark:text-emerald-300">
-              En abierto
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 font-medium text-emerald-700 dark:text-emerald-300"
+              title={accessChip.title}
+            >
+              {accessChip.label}
             </span>
           )}
           <span
