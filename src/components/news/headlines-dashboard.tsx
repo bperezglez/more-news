@@ -18,7 +18,6 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { loadHeadlinesClient } from "@/lib/newspapers/load-headlines-client";
 import { isReadableInApp } from "@/lib/newspapers/headline-rank";
-import { isStaticHosting } from "@/lib/site-config";
 import { getAllPrincipalSources } from "@/lib/newspapers/sources";
 import {
   ACCESS_FILTER_KINDS,
@@ -431,8 +430,8 @@ export function HeadlinesDashboard({
             className="rounded-full"
             onClick={() => void load()}
             disabled={loading}
-            aria-label={isStaticHosting ? "Recargar titulares" : "Actualizar titulares"}
-            title={isStaticHosting ? "Recargar" : "Actualizar"}
+            aria-label="Actualizar titulares"
+            title="Actualizar"
           >
             <RefreshCwIcon className={cn(loading && "animate-spin")} />
           </Button>
