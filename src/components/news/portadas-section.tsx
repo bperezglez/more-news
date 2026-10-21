@@ -19,7 +19,7 @@ export function PortadasSection({ initialFeed = null }: PortadasSectionProps) {
           Titulares
         </TabsTrigger>
         <TabsTrigger value="rss" className="rounded-full px-4">
-          Inspección RSS
+          Inspecci\u00f3n RSS
         </TabsTrigger>
       </TabsList>
       <TabsContent value="titulares" className="mt-0 outline-none">
@@ -27,12 +27,13 @@ export function PortadasSection({ initialFeed = null }: PortadasSectionProps) {
           initialFeed={initialFeed}
           loadFeed={loadPortadaHeadlinesClient}
           progressivePortadaAccess
-          orderingHint={`Hasta ${PORTADA_HEADLINES_PER_SOURCE} titulares de portada por medio · orden feedRank`}
+          groupCrossSourceStories
+          orderingHint={`Hasta ${PORTADA_HEADLINES_PER_SOURCE} titulares de portada por medio \u00b7 en \u00abTodos\u00bb, misma noticia agrupada por fila`}
         />
       </TabsContent>
       <TabsContent value="rss" className="mt-0 max-w-5xl outline-none">
         <p className="mb-4 text-sm text-muted-foreground">
-          Vista técnica del XML de cada feed. Útil para comparar campos y el orden crudo del
+          Vista t\u00e9cnica del XML de cada feed. \u00datil para comparar campos y el orden crudo del
           medio.
         </p>
         <RawFeedsExplorer />
