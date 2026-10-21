@@ -9,6 +9,7 @@ import { isReadableInApp } from "@/lib/newspapers/headline-rank";
 import type { ReadableHeadline } from "@/lib/newspapers/types";
 import { getSourceById } from "@/lib/newspapers/sources";
 import { formatAbsolute, formatRelative } from "@/lib/format-time";
+import { saveHeadlinesScrollForReturn } from "@/lib/headlines-scroll-restore";
 import { cn } from "@/lib/utils";
 
 export function articleHref(headline: ReadableHeadline) {
@@ -69,6 +70,7 @@ export function HeadlineCard({ headline, featured = false }: Props) {
 
   return (
     <article
+      data-headline-id={headline.id}
       className={cn(
         "group relative flex flex-col overflow-hidden rounded-2xl border bg-card text-card-foreground shadow-xs transition-all duration-200",
         "hover:-translate-y-0.5 hover:border-foreground/15 hover:shadow-lg hover:shadow-foreground/5",
@@ -132,7 +134,11 @@ export function HeadlineCard({ headline, featured = false }: Props) {
           )}
         >
           {readable ? (
-            <Link href={articleHref(headline)} className={linkClass}>
+            <Link
+              href={articleHref(headline)}
+              className={linkClass}
+              onClick={() => saveHeadlinesScrollForReturn(headline.id)}
+            >
               {headline.title}
             </Link>
           ) : (
