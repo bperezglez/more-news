@@ -36,6 +36,7 @@ import {
 import { SourceFilterDialog } from "@/components/news/source-filter-dialog";
 import { formatRelative } from "@/lib/format-time";
 import { cn } from "@/lib/utils";
+import { useProgressivePortadaAccess } from "@/lib/newspapers/use-progressive-portada-access";
 import type { ReadableFeed, ReadableHeadline } from "@/lib/newspapers/types";
 
 const ALL = "todos";
@@ -229,12 +230,15 @@ type HeadlinesDashboardProps = {
   loadFeed?: () => Promise<ReadableFeed>;
   /** Texto breve sobre el criterio de ordenación. */
   orderingHint?: string;
+  /** Resuelve acceso titular a titular tras pintar el RSS. */
+  progressivePortadaAccess?: boolean;
 };
 
 export function HeadlinesDashboard({
   initialFeed = null,
   loadFeed = loadHeadlinesClient,
   orderingHint,
+  progressivePortadaAccess = false,
 }: HeadlinesDashboardProps) {
   const allSources = useMemo(() => getAllPrincipalSources(), []);
   const allSourceIds = useMemo(() => allSources.map((s) => s.id), [allSources]);
@@ -243,6 +247,7 @@ export function HeadlinesDashboard({
   const activeVisibleIds = visibleSourceIds ?? defaultVisibleIds;
 
   const [data, setData] = useState<ReadableFeed | null>(initialFeed);
+  const feed = useProgressivePortadaAccess(data, progressivePortadaAccess);
   const [loading, setLoading] = useState(!initialFeed);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<string>(ALL);
@@ -311,15 +316,15 @@ export function HeadlinesDashboard({
   }, []);
 
   const visibleBySource = useMemo(() => {
-    if (!data) return [];
-    return mergeFeedBySource(data.bySource, allSources).filter((row) =>
+    if (!feed) return [];
+    return mergeFeedBySource(feed.bySource, allSources).filter((row) =>
       activeVisibleIds.has(row.source.id),
     );
-  }, [data, allSources, activeVisibleIds]);
+  }, [feed, allSources, activeVisibleIds]);
 
   const visibleHeadlines = useMemo(
-    () => (data ? data.headlines.filter((h) => activeVisibleIds.has(h.sourceId)) : []),
-    [data, activeVisibleIds],
+    () => (feed ? feed.headlines.filter((h) => activeVisibleIds.has(h.sourceId)) : []),
+    [feed, activeVisibleIds],
   );
 
   const sourceErrors = useMemo(() => visibleBySource.filter((s) => s.error), [visibleBySource]);
@@ -343,7 +348,10 @@ export function HeadlinesDashboard({
     return counts;
   }, [baseList]);
   const readableCount = visibleHeadlines.filter(isReadableInApp).length;
-  const updated = formatRelative(data?.fetchedAt);
+  const updated = formatRelative(feed?.fetchedAt);
+  const accessPendingCount = feed?.progressiveAccess
+    ? feed.headlines.filter((h) => h.originalAccess === "pending").length
+    : 0;
   const accessFilterActive = !!accessFilters?.size;
   const splitSections = shouldSplitReadableSections(accessFilters);
 
@@ -401,7 +409,7 @@ export function HeadlinesDashboard({
           </Button>
         </div>
 
-        {data ? (
+        {feed ? (
           <div className="relative -mx-4 sm:-mx-6 lg:-mx-8">
             <div
               className="scrollbar-none flex snap-x gap-2 overflow-x-auto scroll-px-4 px-4 pb-2 sm:scroll-px-6 sm:px-6 lg:scroll-px-8 lg:px-8"
@@ -454,13 +462,18 @@ export function HeadlinesDashboard({
         ) : null}
       </div>
 
-      {data ? (
+      {feed ? (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
           <span>
             <strong className="font-semibold text-foreground tabular-nums">{readableCount}</strong>{" "}
             para leer en la app · {activeVisibleIds.size} de {allSources.length} medios
           </span>
           {orderingHint ? <span>{orderingHint}</span> : null}
+          {accessPendingCount > 0 ? (
+            <span className="text-muted-foreground/90">
+              Comprobando acceso ({accessPendingCount} pendientes)…
+            </span>
+          ) : null}
           {updated ? <span>Actualizado {updated}</span> : null}
           {sourceErrors.length ? (
             <details className="group w-full sm:w-auto">
@@ -483,7 +496,7 @@ export function HeadlinesDashboard({
         </div>
       ) : null}
 
-      {error && data ? (
+      {error && feed ? (
         <div
           role="alert"
           className="flex items-center justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm"
@@ -495,9 +508,9 @@ export function HeadlinesDashboard({
         </div>
       ) : null}
 
-      {loading && !data ? <LoadingGrid /> : null}
+      {loading && !feed ? <LoadingGrid /> : null}
 
-      {error && !data ? (
+      {error && !feed ? (
         <EmptyState icon={WifiOffIcon} title="No se pudieron cargar los titulares">
           <p>{error}</p>
           <Button className="mt-4" onClick={() => void load()}>
@@ -507,7 +520,7 @@ export function HeadlinesDashboard({
         </EmptyState>
       ) : null}
 
-      {data ? (
+      {feed ? (
         <div
           className={cn("transition-opacity", loading && "opacity-60")}
           aria-live="polite"
