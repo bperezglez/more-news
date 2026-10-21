@@ -13,6 +13,7 @@ import {
   XIcon,
 } from "lucide-react";
 import { HeadlineCard } from "./headline-card";
+import { StoryClusterRow } from "./story-cluster-row";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { loadHeadlinesClient } from "@/lib/newspapers/load-headlines-client";
@@ -36,6 +37,7 @@ import {
 import { SourceFilterDialog } from "@/components/news/source-filter-dialog";
 import { formatRelative } from "@/lib/format-time";
 import { cn } from "@/lib/utils";
+import { clusterCrossSourceStories } from "@/lib/newspapers/story-clusters";
 import { useProgressivePortadaAccess } from "@/lib/newspapers/use-progressive-portada-access";
 import type { ReadableFeed, ReadableHeadline } from "@/lib/newspapers/types";
 
@@ -91,6 +93,28 @@ function LoadingGrid() {
             <Skeleton className="h-3 w-2/3" />
           </div>
         </div>
+      ))}
+    </div>
+  );
+}
+
+function ClusteredHeadlineGrid({
+  headlines,
+  featureFirst,
+}: {
+  headlines: ReadableHeadline[];
+  featureFirst: boolean;
+}) {
+  const clusters = useMemo(() => clusterCrossSourceStories(headlines), [headlines]);
+
+  return (
+    <div className="flex flex-col gap-5">
+      {clusters.map((cluster, i) => (
+        <StoryClusterRow
+          key={cluster.id}
+          headlines={cluster.headlines}
+          featured={featureFirst && i === 0}
+        />
       ))}
     </div>
   );
@@ -232,6 +256,8 @@ type HeadlinesDashboardProps = {
   orderingHint?: string;
   /** Resuelve acceso titular a titular tras pintar el RSS. */
   progressivePortadaAccess?: boolean;
+  /** En «Todos», agrupa titulares similares de distintos medios en una fila. */
+  groupCrossSourceStories?: boolean;
 };
 
 export function HeadlinesDashboard({
@@ -239,6 +265,7 @@ export function HeadlinesDashboard({
   loadFeed = loadHeadlinesClient,
   orderingHint,
   progressivePortadaAccess = false,
+  groupCrossSourceStories = false,
 }: HeadlinesDashboardProps) {
   const allSources = useMemo(() => getAllPrincipalSources(), []);
   const allSourceIds = useMemo(() => allSources.map((s) => s.id), [allSources]);
@@ -354,6 +381,8 @@ export function HeadlinesDashboard({
     : 0;
   const accessFilterActive = !!accessFilters?.size;
   const splitSections = shouldSplitReadableSections(accessFilters);
+  const useStoryClusters =
+    groupCrossSourceStories && activeSelection === ALL && !q.trim();
 
   return (
     <div className="space-y-5">
@@ -527,11 +556,18 @@ export function HeadlinesDashboard({
           aria-busy={loading}
         >
           {shown.length ? (
-            <HeadlineGrid
-              headlines={shown}
-              featureFirst={!q && !accessFilterActive}
-              splitSections={splitSections}
-            />
+            useStoryClusters ? (
+              <ClusteredHeadlineGrid
+                headlines={shown}
+                featureFirst={!accessFilterActive}
+              />
+            ) : (
+              <HeadlineGrid
+                headlines={shown}
+                featureFirst={!q && !accessFilterActive}
+                splitSections={splitSections}
+              />
+            )
           ) : q || accessFilterActive ? (
             <EmptyState
               icon={SearchXIcon}
