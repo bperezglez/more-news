@@ -20,7 +20,12 @@ const STORAGE_KEY = "more-news:access-filters";
 export function getHeadlineAccessKind(headline: ReadableHeadline): AccessFilterKind {
   if (headline.originalAccess === "pending") return "free";
   if (headline.alternative) return "via-alternative";
-  if (headline.originalAccess === "free") return "free";
+  if (
+    headline.originalAccess === "free" ||
+    headline.originalAccess === "subscriber_readable"
+  ) {
+    return "free";
+  }
   return "no-read";
 }
 

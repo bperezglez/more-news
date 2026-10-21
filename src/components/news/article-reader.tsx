@@ -89,6 +89,19 @@ function ReaderBar({ externalUrl }: { externalUrl: string }) {
   );
 }
 
+function SubscriptionExtractNotice({ source }: { source?: string }) {
+  return (
+    <aside className="mb-8 flex gap-3 rounded-2xl border border-violet-500/25 bg-violet-500/5 p-4 text-sm">
+      <InfoIcon className="mt-0.5 size-4 shrink-0 text-violet-600 dark:text-violet-400" />
+      <p>
+        {source ?? "Este medio"} la marca como contenido de{" "}
+        <strong>suscripción</strong>, pero el texto venía en la página y puedes leerlo aquí.
+        Apoyar al medio en su web sigue siendo la forma oficial de acceder.
+      </p>
+    </aside>
+  );
+}
+
 function CoverageNotice({ via, original, access, source, title }: ArticleReaderProps) {
   if (!via || !original) return null;
   const reason =
@@ -185,6 +198,7 @@ export function ArticleReader(props: ArticleReaderProps) {
 function DynamicArticleReader(props: ArticleReaderProps) {
   const { url } = props;
   const [article, setArticle] = useState<ArticleContent | null>(null);
+  const [resolvedAccess, setResolvedAccess] = useState<string | undefined>(props.access);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -199,9 +213,12 @@ function DynamicArticleReader(props: ArticleReaderProps) {
           window.location.href = assetUrl("/login");
           return;
         }
-        const json = await readJson<ArticleContent>(res);
+        const json = await readJson<ArticleContent & { error?: string }>(res);
         if (!res.ok || json.error) throw new Error(json.error ?? "Error al cargar");
-        if (!cancelled) setArticle(json);
+        if (!cancelled) {
+          setArticle(json);
+          setResolvedAccess(json.access ?? props.access);
+        }
       } catch (e) {
         if (!cancelled) {
           setError(e instanceof Error ? e.message : "Error desconocido");
@@ -214,7 +231,9 @@ function DynamicArticleReader(props: ArticleReaderProps) {
     return () => {
       cancelled = true;
     };
-  }, [url]);
+  }, [url, props.access]);
+
+  const access = resolvedAccess ?? props.access;
 
   if (loading) {
     return (
@@ -269,7 +288,10 @@ function DynamicArticleReader(props: ArticleReaderProps) {
   return (
     <Shell externalUrl={article.sourceUrl}>
       <article>
-        <CoverageNotice {...props} />
+        <CoverageNotice {...props} access={access} />
+        {access === "subscriber_readable" ? (
+          <SubscriptionExtractNotice source={props.source} />
+        ) : null}
         <header className="mb-10 space-y-4">
           {article.siteName || props.via || props.source ? (
             <p className="text-sm font-medium text-primary">

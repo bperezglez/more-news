@@ -34,6 +34,17 @@ function cacheKey(url: string): string {
   }
 }
 
+function toArticleContent(url: string, parsed: NonNullable<ReturnType<Readability["parse"]>>): ArticleContent {
+  return {
+    title: parsed.title ?? "Artículo",
+    content: parsed.content ?? "",
+    excerpt: parsed.excerpt ?? undefined,
+    byline: parsed.byline ?? undefined,
+    siteName: parsed.siteName ?? undefined,
+    sourceUrl: url,
+  };
+}
+
 async function analyze(url: string): Promise<ArticleAnalysis> {
   if (!isKnownSourceUrl(url)) {
     return { access: "blocked", detail: "Dominio no configurado como fuente" };
@@ -59,9 +70,6 @@ async function analyze(url: string): Promise<ArticleAnalysis> {
   }
 
   const verdict = detectPaywall(html);
-  if (verdict.paywalled) {
-    return { access: "paywalled", detail: verdict.reason };
-  }
 
   let parsed: ReturnType<Readability["parse"]>;
   try {
@@ -70,24 +78,30 @@ async function analyze(url: string): Promise<ArticleAnalysis> {
   } catch (err) {
     const detail = err instanceof Error ? err.message : "Error al procesar la página";
     console.error(`[article-access] ${url}: ${detail}`);
+    if (verdict.paywalled) {
+      return { access: "paywalled", detail: verdict.reason };
+    }
     return { access: "unextractable", detail };
   }
+
   const textLength = parsed?.textContent?.trim().length ?? 0;
-  if (!parsed?.content || textLength < MIN_ARTICLE_CHARS) {
-    return { access: "unextractable", detail: `${textLength} caracteres` };
+  if (parsed?.content && textLength >= MIN_ARTICLE_CHARS) {
+    const article = toArticleContent(url, parsed);
+    if (verdict.paywalled) {
+      return {
+        access: "subscriber_readable",
+        article,
+        detail: verdict.reason,
+      };
+    }
+    return { access: "free", article };
   }
 
-  return {
-    access: "free",
-    article: {
-      title: parsed.title ?? "Artículo",
-      content: parsed.content,
-      excerpt: parsed.excerpt ?? undefined,
-      byline: parsed.byline ?? undefined,
-      siteName: parsed.siteName ?? undefined,
-      sourceUrl: url,
-    },
-  };
+  if (verdict.paywalled) {
+    return { access: "paywalled", detail: verdict.reason };
+  }
+
+  return { access: "unextractable", detail: `${textLength} caracteres` };
 }
 
 export function analyzeArticle(url: string): Promise<ArticleAnalysis> {

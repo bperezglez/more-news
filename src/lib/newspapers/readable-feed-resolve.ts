@@ -73,7 +73,7 @@ async function findAlternative(
   for (const { c, score } of ranked) {
     if (Date.now() > deadline) return undefined;
     const analysis = await analyzeArticle(c.headline.link);
-    if (analysis.access === "free") {
+    if (analysis.access === "free" || analysis.access === "subscriber_readable") {
       return {
         link: c.headline.link,
         title: c.headline.title,
@@ -105,8 +105,8 @@ export async function resolveReadableHeadlines(
       }
       try {
         const analysis = await analyzeArticle(headline.link);
-        if (analysis.access === "free") {
-          return { ...headline, originalAccess: "free" };
+        if (analysis.access === "free" || analysis.access === "subscriber_readable") {
+          return { ...headline, originalAccess: analysis.access };
         }
         const alternative = await findAlternative(
           headline,

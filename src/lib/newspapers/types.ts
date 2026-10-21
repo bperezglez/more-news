@@ -30,8 +30,16 @@ export interface Headline {
   feedRank?: number;
 }
 
-/** Por qué no se puede leer el original dentro de la app. */
-export type OriginalAccess = "free" | "paywalled" | "blocked" | "unextractable";
+/**
+ * Acceso al original. `subscriber_readable`: marcado de pago/suscripción en el HTML
+ * pero con cuerpo suficiente extraíble para leer en la app.
+ */
+export type OriginalAccess =
+  | "free"
+  | "subscriber_readable"
+  | "paywalled"
+  | "blocked"
+  | "unextractable";
 
 /** Acceso aún no comprobado (portada con carga progresiva). */
 export type AccessState = OriginalAccess | "pending";
@@ -76,6 +84,8 @@ export interface ArticleContent {
   byline?: string;
   siteName?: string;
   sourceUrl: string;
+  /** Presente en respuestas de `/api/article` cuando el acceso no es `free` puro. */
+  access?: OriginalAccess;
 }
 
 /** Ítem tal como viene en el RSS (orden de portada del medio). */

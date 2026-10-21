@@ -11,7 +11,11 @@ import type { Headline, ReadableHeadline } from "./types";
 /** Se puede leer entera en la app (original abierto o cobertura alternativa). */
 export function isReadableInApp(headline: ReadableHeadline): boolean {
   if (headline.originalAccess === "pending") return true;
-  return headline.originalAccess === "free" || !!headline.alternative;
+  return (
+    headline.originalAccess === "free" ||
+    headline.originalAccess === "subscriber_readable" ||
+    !!headline.alternative
+  );
 }
 
 type RankInput = {

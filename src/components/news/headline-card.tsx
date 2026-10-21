@@ -22,7 +22,12 @@ export function articleHref(headline: ReadableHeadline) {
     params.set("via", alt.sourceName);
     params.set("original", headline.link);
   }
-  if (headline.originalAccess !== "pending" && (!isReadableInApp(headline) || alt)) {
+  if (
+    headline.originalAccess !== "pending" &&
+    (headline.originalAccess === "subscriber_readable" ||
+      !isReadableInApp(headline) ||
+      alt)
+  ) {
     params.set("access", headline.originalAccess);
   }
   return `/articulo?${params.toString()}`;
@@ -176,6 +181,10 @@ export function HeadlineCard({ headline, featured = false }: Props) {
             <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-1 font-medium text-amber-800 dark:text-amber-300">
               <LockIcon className="size-3" aria-hidden />
               {unreadableLabel(headline)}
+            </span>
+          ) : headline.originalAccess === "subscriber_readable" ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-500/10 px-2.5 py-1 font-medium text-violet-800 dark:text-violet-300">
+              Suscripción · en la app
             </span>
           ) : (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 font-medium text-emerald-700 dark:text-emerald-300">
