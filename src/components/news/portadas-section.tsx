@@ -17,7 +17,8 @@ export function PortadasSection({ initialFeed = null }: PortadasSectionProps) {
       loadFeed={loadPortadaHeadlinesClient}
       progressivePortadaAccess
       groupCrossSourceStories
-      orderingHint={`Hasta ${PORTADA_HEADLINES_PER_SOURCE} titulares de portada por medio · en «Todos», misma noticia agrupada por fila`}
+      enableScopeTabs
+      orderingHint={`Hasta ${PORTADA_HEADLINES_PER_SOURCE} titulares de portada por medio (orden del feed de portada) · pestaña Canarias con filtro por isla`}
     />
   );
 }

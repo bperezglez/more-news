@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getAllPrincipalSources } from "@/lib/newspapers/sources";
+import { SCOPE_LABELS, filterSourcesByScope } from "@/lib/newspapers/source-regions";
 import { setVisibleSourceIds } from "@/lib/newspapers/source-preferences";
 
 type Props = {
@@ -23,6 +24,14 @@ type Props = {
 
 export function SourceFilterDialog({ visibleIds, onChange }: Props) {
   const allSources = useMemo(() => getAllPrincipalSources(), []);
+  const nationalSources = useMemo(
+    () => filterSourcesByScope(allSources, "national"),
+    [allSources],
+  );
+  const canariasSources = useMemo(
+    () => filterSourcesByScope(allSources, "canarias"),
+    [allSources],
+  );
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<Set<string>>(() => new Set(visibleIds));
 
@@ -97,43 +106,60 @@ export function SourceFilterDialog({ visibleIds, onChange }: Props) {
           </div>
         </div>
         <ScrollArea className="h-[min(50vh,420px)] rounded-xl border">
-          <ul className="grid gap-0.5 p-2 sm:grid-cols-2">
-            {allSources.map((source) => {
-              const checked = draft.has(source.id);
-              const off = source.enabled === false;
-              return (
-                <li key={source.id}>
-                  <label
-                    className={`flex min-h-11 cursor-pointer items-start gap-3 rounded-lg px-2.5 py-2.5 transition-colors hover:bg-muted/70 ${
-                      checked ? "bg-accent/60" : ""
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      className="mt-0.5 size-4 shrink-0 accent-primary"
-                      checked={checked}
-                      onChange={() => toggle(source.id)}
-                    />
-                    <span className="min-w-0 flex-1 text-sm">
-                      <span className="flex items-center gap-2 font-medium">
-                        <span
-                          className="size-2 shrink-0 rounded-full"
-                          style={{ backgroundColor: source.accent }}
-                          aria-hidden
-                        />
-                        {source.name}
-                      </span>
-                      {off ? (
-                        <span className="mt-0.5 block text-xs text-muted-foreground">
-                          Sin RSS disponible por ahora
-                        </span>
-                      ) : null}
-                    </span>
-                  </label>
-                </li>
-              );
-            })}
-          </ul>
+          <div className="space-y-4 p-2">
+            {(
+              [
+                { title: SCOPE_LABELS.national, sources: nationalSources },
+                { title: SCOPE_LABELS.canarias, sources: canariasSources },
+              ] as const
+            ).map(
+              (section) =>
+                section.sources.length > 0 && (
+                  <section key={section.title}>
+                    <h3 className="mb-1.5 px-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                      {section.title}
+                    </h3>
+                    <ul className="grid gap-0.5 sm:grid-cols-2">
+                      {section.sources.map((source) => {
+                        const checked = draft.has(source.id);
+                        const off = source.enabled === false;
+                        return (
+                          <li key={source.id}>
+                            <label
+                              className={`flex min-h-11 cursor-pointer items-start gap-3 rounded-lg px-2.5 py-2.5 transition-colors hover:bg-muted/70 ${
+                                checked ? "bg-accent/60" : ""
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                className="mt-0.5 size-4 shrink-0 accent-primary"
+                                checked={checked}
+                                onChange={() => toggle(source.id)}
+                              />
+                              <span className="min-w-0 flex-1 text-sm">
+                                <span className="flex items-center gap-2 font-medium">
+                                  <span
+                                    className="size-2 shrink-0 rounded-full"
+                                    style={{ backgroundColor: source.accent }}
+                                    aria-hidden
+                                  />
+                                  {source.name}
+                                </span>
+                                {off ? (
+                                  <span className="mt-0.5 block text-xs text-muted-foreground">
+                                    Sin RSS disponible por ahora
+                                  </span>
+                                ) : null}
+                              </span>
+                            </label>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </section>
+                ),
+            )}
+          </div>
         </ScrollArea>
         <DialogFooter>
           <Button type="button" size="lg" className="w-full sm:w-auto" onClick={apply}>
