@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { getReadablePortadaFeed } from "@/lib/newspapers/build-portada-feed";
+import { getPortadaFeedSkeleton } from "@/lib/newspapers/build-portada-feed";
 
 export const maxDuration = 60;
 
 export async function GET() {
   try {
-    const feed = await getReadablePortadaFeed();
+    const feed = await getPortadaFeedSkeleton();
     return NextResponse.json(feed);
   } catch (err) {
     console.error("[api/portada-headlines]", err);
