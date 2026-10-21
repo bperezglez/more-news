@@ -3,8 +3,6 @@ import { NewspaperIcon } from "lucide-react";
 import { LogoutButton } from "@/components/logout-button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { InstallAppButton } from "@/components/pwa/install-app-button";
-import { isStaticHosting } from "@/lib/site-config";
-
 export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 pt-[env(safe-area-inset-top)] backdrop-blur-xl supports-[backdrop-filter]:bg-background/65">
@@ -27,7 +25,7 @@ export function SiteHeader() {
           </Link>
           <InstallAppButton />
           <ThemeToggle />
-          {isStaticHosting ? null : <LogoutButton />}
+          <LogoutButton />
         </div>
       </div>
     </header>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { assetUrl, basePath } from "@/lib/site-config";
+import { assetUrl } from "@/lib/site-config";
 
 export function PwaProvider() {
   useEffect(() => {
@@ -10,7 +10,7 @@ export function PwaProvider() {
     const register = async () => {
       try {
         await navigator.serviceWorker.register(assetUrl("/sw.js"), {
-          scope: basePath ? `${basePath}/` : "/",
+          scope: "/",
           updateViaCache: "none",
         });
       } catch {
