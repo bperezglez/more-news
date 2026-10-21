@@ -1,0 +1,33 @@
+---
+description: Todo cambio del proyecto debe quedar en GitHub (commit, push y PR).
+alwaysApply: true
+---
+
+# Sincronización con GitHub (obligatorio)
+
+En **more-news**, ningún trabajo del agente (ni de quien contribuya con Cursor) debe quedar solo en la máquina local. GitHub es la fuente de verdad compartida del proyecto.
+
+## Qué hacer siempre
+
+1. **Rama de trabajo**: crea ramas con el prefijo `cursor/` y el sufijo `-bb5e` (por ejemplo `cursor/nombre-descriptivo-bb5e`), salvo que el usuario indique otra convención.
+2. **Commit**: haz commit de cada entrega coherente con mensajes claros en español o inglés, describiendo el qué y el porqué.
+3. **Push a GitHub.com**: el remoto que el usuario consulta es **`https://github.com/bperezglez/more-news`**. Tras cada commit, sube la rama con `git push -u github <rama>` (o crea/actualiza un PR vía la API de GitHub). Los pushes solo a Origin (`origin.cursor.com`) **no bastan**: hay que reflejar los cambios en GitHub.com.
+4. **Push a Origin (Cursor)**: si el entorno usa `origin` de Cursor, también `git push -u origin <rama>` para agentes en la nube.
+5. **Pull request**: abre o actualiza un PR hacia `main` en **GitHub.com** (borrador si no se indica lo contrario) y fusiónalo o deja la rama pusheada antes de dar por cerrada una tarea.
+6. **Estado limpio**: al terminar un turno con cambios, el working tree debe estar commiteado y pusheado a GitHub; no dejes parches sin subir.
+
+## Alcance
+
+- Código, estilos, scripts, configuración (incluidas reglas de Cursor, `AGENTS.md`, `environment.json`, etc.).
+- Correcciones pequeñas y refactors: mismo flujo (commit → push → PR).
+- Si solo respondes una duda sin tocar archivos, no hace falta commit; en cuanto modifiques el repo, aplica esta regla.
+
+## Si el push falla
+
+- Reintenta por errores de red (backoff).
+- Si hay conflictos, resuélvelos en la rama y vuelve a pushear.
+- Informa al usuario si no puedes subir a GitHub y deja explícito qué quedó pendiente.
+
+## Recordatorio para agentes en la nube
+
+Este repositorio se trabaja con **Cloud Agents**: la revisión y el historial viven en GitHub. Subir los cambios no es opcional; es parte de completar la tarea.
