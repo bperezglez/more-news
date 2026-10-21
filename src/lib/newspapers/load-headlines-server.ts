@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { getReadableFeed } from "@/lib/newspapers/build-feed";
+import { getReadablePortadaFeed } from "@/lib/newspapers/build-portada-feed";
 import { isStaticHosting } from "@/lib/site-config";
 import type { ReadableFeed } from "@/lib/newspapers/types";
 
@@ -28,6 +29,20 @@ export async function loadHeadlinesForPage(): Promise<ReadableFeed | null> {
     return await getReadableFeed();
   } catch (err) {
     console.error("[loadHeadlinesForPage]", err);
+    return null;
+  }
+}
+
+/** Titulares de portada RSS para SSR en `/portadas`. */
+export async function loadPortadaHeadlinesForPage(): Promise<ReadableFeed | null> {
+  if (isStaticHosting) {
+    return null;
+  }
+
+  try {
+    return await getReadablePortadaFeed();
+  } catch (err) {
+    console.error("[loadPortadaHeadlinesForPage]", err);
     return null;
   }
 }

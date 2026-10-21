@@ -46,6 +46,23 @@ export function computeHeadlineImportance({ headline, print, pool }: RankInput):
   return 0.5 * feedScore + 0.4 * clusterScore + 0.1 * recencyScore;
 }
 
+/** Orden global cuando la fuente de verdad es la portada RSS (feedRank ascendente). */
+export function sortPortadaTodosFeed(headlines: ReadableHeadline[]): ReadableHeadline[] {
+  return [...headlines].sort((a, b) => {
+    const tierA = isReadableInApp(a) ? 0 : 1;
+    const tierB = isReadableInApp(b) ? 0 : 1;
+    if (tierA !== tierB) return tierA - tierB;
+
+    const rankA = a.feedRank ?? 999;
+    const rankB = b.feedRank ?? 999;
+    if (rankA !== rankB) return rankA - rankB;
+
+    const ta = a.publishedAt ? Date.parse(a.publishedAt) : 0;
+    const tb = b.publishedAt ? Date.parse(b.publishedAt) : 0;
+    return tb - ta;
+  });
+}
+
 export function sortTodosFeed(headlines: ReadableHeadline[]): ReadableHeadline[] {
   const pool = headlines.map((headline) => ({
     headline,

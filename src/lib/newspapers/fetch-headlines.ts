@@ -1,11 +1,7 @@
-import { createHash } from "crypto";
 import type { Headline, NewspaperSource } from "./types";
 import { getAllPrincipalSources } from "./sources";
+import { stableHeadlineId } from "./headline-id";
 import { itemHasArticleLink, pickImage, rssParser } from "./rss-client";
-
-function stableId(link: string, title: string): string {
-  return createHash("sha256").update(`${link}|${title}`).digest("hex").slice(0, 16);
-}
 
 export async function fetchHeadlinesForSource(
   source: NewspaperSource,
@@ -13,7 +9,7 @@ export async function fetchHeadlinesForSource(
   const feed = await rssParser.parseURL(source.feedUrl);
   const items = (feed.items ?? []).filter((item) => itemHasArticleLink(item));
   return items.slice(0, 40).map((item, feedRank) => ({
-    id: stableId(item.link ?? item.guid ?? item.title ?? source.id, item.title ?? ""),
+    id: stableHeadlineId(item.link ?? item.guid ?? item.title ?? source.id, item.title ?? ""),
     title: (item.title ?? "Sin título").trim(),
     link: (item.link ?? item.guid ?? source.website).trim(),
     summary: item.contentSnippet?.trim() || item.summary?.trim(),
