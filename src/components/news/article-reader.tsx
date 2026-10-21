@@ -14,7 +14,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { assetUrl, isStaticHosting } from "@/lib/site-config";
+import { assetUrl } from "@/lib/site-config";
 import { readJson } from "@/lib/read-json";
 import type { ArticleContent } from "@/lib/newspapers/types";
 
@@ -152,50 +152,7 @@ function Shell({ externalUrl, children }: { externalUrl: string; children: React
   );
 }
 
-function StaticArticleFallback(props: ArticleReaderProps) {
-  const { url, title, summary, source, via } = props;
-  return (
-    <Shell externalUrl={url}>
-      <article>
-        <CoverageNotice {...props} />
-        {source ? (
-          <p className="mb-3 text-sm font-medium text-primary">{via ?? source}</p>
-        ) : null}
-        <h1 className="text-3xl font-semibold leading-tight tracking-tight text-balance sm:text-4xl">
-          {title ?? "Noticia"}
-        </h1>
-        {summary ? (
-          <p className="mt-5 text-lg leading-relaxed text-pretty text-muted-foreground">
-            {summary}
-          </p>
-        ) : null}
-        <div className="mt-8 rounded-2xl border bg-muted/40 p-5 text-sm text-muted-foreground">
-          En esta versión publicada no hay servidor para extraer el artículo completo.
-          Ábrelo en el medio o usa la app en local o en Vercel para leerlo aquí.
-          <a
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={cn(buttonVariants({ size: "lg" }), "mt-4 flex w-full sm:inline-flex sm:w-auto")}
-          >
-            <BookOpenIcon />
-            {via ? `Leer en abierto en ${via}` : "Leer en el periódico"}
-          </a>
-        </div>
-      </article>
-    </Shell>
-  );
-}
-
 export function ArticleReader(props: ArticleReaderProps) {
-  if (isStaticHosting) {
-    return <StaticArticleFallback {...props} />;
-  }
-
-  return <DynamicArticleReader {...props} />;
-}
-
-function DynamicArticleReader(props: ArticleReaderProps) {
   const { url } = props;
   const [article, setArticle] = useState<ArticleContent | null>(null);
   const [resolvedAccess, setResolvedAccess] = useState<string | undefined>(props.access);
