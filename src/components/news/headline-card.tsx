@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowUpRightIcon, LockIcon, RepeatIcon } from "lucide-react";
+import { isAccessPending } from "@/lib/newspapers/portada-access";
 import { isReadableInApp } from "@/lib/newspapers/headline-rank";
 import type { ReadableHeadline } from "@/lib/newspapers/types";
 import { getSourceById } from "@/lib/newspapers/sources";
@@ -21,7 +22,7 @@ export function articleHref(headline: ReadableHeadline) {
     params.set("via", alt.sourceName);
     params.set("original", headline.link);
   }
-  if (!isReadableInApp(headline) || alt) {
+  if (headline.originalAccess !== "pending" && (!isReadableInApp(headline) || alt)) {
     params.set("access", headline.originalAccess);
   }
   return `/articulo?${params.toString()}`;
@@ -55,6 +56,7 @@ type Props = {
 export function HeadlineCard({ headline, featured = false }: Props) {
   const source = getSourceById(headline.sourceId);
   const accent = source?.accent ?? "#334155";
+  const pending = isAccessPending(headline);
   const readable = isReadableInApp(headline);
   const alt = headline.alternative;
   const [imageFailed, setImageFailed] = useState(false);
@@ -71,7 +73,7 @@ export function HeadlineCard({ headline, featured = false }: Props) {
         "hover:-translate-y-0.5 hover:border-foreground/15 hover:shadow-lg hover:shadow-foreground/5",
         "focus-within:ring-3 focus-within:ring-ring/50 motion-reduce:transition-none motion-reduce:hover:translate-y-0",
         featured && "sm:col-span-2 lg:row-span-2",
-        !readable && "bg-muted/40",
+        !readable && !pending && "bg-muted/40",
       )}
     >
       {showImage || featured ? (
@@ -91,7 +93,7 @@ export function HeadlineCard({ headline, featured = false }: Props) {
               className={cn(
                 "size-full object-cover transition-transform duration-500 group-hover:scale-[1.03] motion-reduce:transition-none",
                 featured && "lg:absolute lg:inset-0",
-                !readable && "grayscale-[35%]",
+                !readable && !pending && "grayscale-[35%]",
               )}
             />
           ) : (
@@ -164,6 +166,11 @@ export function HeadlineCard({ headline, featured = false }: Props) {
             >
               <RepeatIcon className="size-3" aria-hidden />
               Vía {alt.sourceName}
+            </span>
+          ) : pending ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 font-medium text-muted-foreground">
+              <span className="size-2 animate-pulse rounded-full bg-primary/60" aria-hidden />
+              Comprobando acceso…
             </span>
           ) : !readable ? (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-1 font-medium text-amber-800 dark:text-amber-300">

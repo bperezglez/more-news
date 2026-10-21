@@ -26,6 +26,7 @@ export function PortadasSection({ initialFeed = null }: PortadasSectionProps) {
         <HeadlinesDashboard
           initialFeed={initialFeed}
           loadFeed={loadPortadaHeadlinesClient}
+          progressivePortadaAccess
           orderingHint={`Hasta ${PORTADA_HEADLINES_PER_SOURCE} titulares de portada por medio · orden feedRank`}
         />
       </TabsContent>

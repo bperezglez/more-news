@@ -18,6 +18,7 @@ export const ACCESS_FILTER_LABELS: Record<AccessFilterKind, string> = {
 const STORAGE_KEY = "more-news:access-filters";
 
 export function getHeadlineAccessKind(headline: ReadableHeadline): AccessFilterKind {
+  if (headline.originalAccess === "pending") return "free";
   if (headline.alternative) return "via-alternative";
   if (headline.originalAccess === "free") return "free";
   return "no-read";

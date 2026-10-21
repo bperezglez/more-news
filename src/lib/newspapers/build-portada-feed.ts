@@ -1,18 +1,14 @@
 import { fetchRawFeedsSnapshot } from "./fetch-raw-feeds";
 import { stableHeadlineId } from "./headline-id";
-import { sortPortadaTodosFeed } from "./headline-rank";
-import {
-  headlineCandidates,
-  READABLE_FEED_BUDGET_MS,
-  resolveReadableHeadlines,
-} from "./readable-feed-resolve";
 import { PORTADA_HEADLINES_PER_SOURCE } from "./portada-config";
+import { interleavePortadaHeadlines, sortPortadaBySequence } from "./portada-order";
 import { getAllPrincipalSources } from "./sources";
 import type {
   Headline,
   RawFeedItem,
   RawFeedSourceSnapshot,
   ReadableFeed,
+  ReadableHeadline,
   SourceSummary,
 } from "./types";
 
@@ -49,19 +45,6 @@ function comparePortadaRank(a: Headline, b: Headline): number {
   return tb - ta;
 }
 
-/** Analiza primero el titular #1 de cada medio, luego el #2, etc. (carga escalonada justa). */
-function interleavePortadaHeadlines(buckets: Headline[][]): Headline[] {
-  const maxLen = buckets.reduce((m, b) => Math.max(m, b.length), 0);
-  const out: Headline[] = [];
-  for (let rank = 0; rank < maxLen; rank++) {
-    for (const bucket of buckets) {
-      const h = bucket[rank];
-      if (h) out.push(h);
-    }
-  }
-  return out;
-}
-
 function portadaHeadlinesForRow(row: RawFeedSourceSnapshot): Headline[] {
   return row.items
     .filter((i) => i.passesFilter)
@@ -69,57 +52,63 @@ function portadaHeadlinesForRow(row: RawFeedSourceSnapshot): Headline[] {
     .map((item) => rawItemToHeadline(item, row.source));
 }
 
+function toPendingReadable(headline: Headline, sequence: number): ReadableHeadline {
+  return { ...headline, originalAccess: "pending", sequence };
+}
+
 /**
- * Construye el mismo tipo de feed legible que la home, pero los titulares salen
- * del RSS en orden de portada (filteredRank) y el listado global respeta esa jerarquía.
+ * Feed de portada solo con datos RSS (respuesta rápida). El acceso se resuelve en cliente.
  */
-export async function buildReadablePortadaFeed(
+export async function buildPortadaFeedSkeleton(
   options: BuildPortadaFeedOptions = {},
 ): Promise<ReadableFeed> {
   const limitPerSource =
     options.limitPerSource ?? Math.max(PORTADA_HEADLINES_PER_SOURCE, 20);
-  const deadline = Date.now() + READABLE_FEED_BUDGET_MS;
   const raw = await fetchRawFeedsSnapshot({ limitPerSource });
 
   const principalIds = new Set(getAllPrincipalSources().map((s) => s.id));
   const principalRows = raw.bySource.filter((row) => principalIds.has(row.source.id));
 
   const perSourceBuckets = principalRows.map(portadaHeadlinesForRow);
-  const headlines = perSourceBuckets.flat();
-  const toAnalyze = interleavePortadaHeadlines(perSourceBuckets);
+  const interleaved = interleavePortadaHeadlines(perSourceBuckets);
+  const headlines = interleaved.map((h, sequence) => toPendingReadable(h, sequence));
 
-  const pool = headlineCandidates(headlines);
-  const all = await resolveReadableHeadlines(toAnalyze, pool, deadline);
+  const byId = new Map(headlines.map((h) => [h.id, h]));
 
-  const bySource: SourceSummary[] = principalRows.map((row) => {
-    const sourceAll = all
-      .filter((h) => h.sourceId === row.source.id)
-      .sort(comparePortadaRank)
-      .slice(0, PORTADA_HEADLINES_PER_SOURCE);
+  const bySource: SourceSummary[] = principalRows.map((row, rowIndex) => {
+    const fromRow = perSourceBuckets[rowIndex]
+      .map((h) => byId.get(h.id)!)
+      .filter(Boolean);
+
     return {
       source: { id: row.source.id, name: row.source.name },
-      headlines: sourceAll,
+      headlines: fromRow,
       hiddenCount: 0,
       error: row.error,
     };
   });
 
   return {
-    headlines: sortPortadaTodosFeed(all),
+    headlines: sortPortadaBySequence(headlines),
     bySource,
     fetchedAt: new Date().toISOString(),
+    progressiveAccess: true,
   };
 }
 
 const FEED_TTL_MS = 15 * 60 * 1000;
 let cached: { at: number; value: Promise<ReadableFeed> } | undefined;
 
-export function getReadablePortadaFeed(): Promise<ReadableFeed> {
+export function getPortadaFeedSkeleton(): Promise<ReadableFeed> {
   if (cached && Date.now() - cached.at < FEED_TTL_MS) return cached.value;
-  const value = buildReadablePortadaFeed();
+  const value = buildPortadaFeedSkeleton();
   cached = { at: Date.now(), value };
   value.catch(() => {
     if (cached?.value === value) cached = undefined;
   });
   return value;
 }
+
+/** @deprecated Usar getPortadaFeedSkeleton; el acceso se resuelve en cliente. */
+export const getReadablePortadaFeed = getPortadaFeedSkeleton;
+export const buildReadablePortadaFeed = buildPortadaFeedSkeleton;
